@@ -16,16 +16,10 @@ selecting the best arm up until \code{epsilon * N} for either the remaining N tr
 
 In case of a tie in the exploitation phase, \code{EpsilonFirstPolicy} randomly selects and arm.
 }
-\section{Algorithm}{
-
-
-\figure{algoepsilonfirst.jpg}{epsilon epsilon algorithm}
-}
-
 \section{Usage}{
 
 \preformatted{
-policy <- EpsilonFirstPolicy(epsilon = 0.1, N = 100)
+policy <- EpsilonFirstPolicy(epsilon = 0.1, N = 1000, time_steps = NULL)
 }
 }
 
@@ -40,6 +34,10 @@ through \code{epsilon * N}.
 \item{\code{N}}{
 integer; positive integer which sets the number of time steps to explore through \code{epsilon * N}.
 }
+\item{\code{time_steps}}{
+integer; positive integer which sets the number of time steps to explore - can be used instead of
+epsilon and N.
+}
 }
 }
 
@@ -47,7 +45,8 @@ integer; positive integer which sets the number of time steps to explore through
 
 
 \describe{
-\item{\code{new(epsilon = 0.1, N = 100)}}{ Generates a new \code{EpsilonFirstPolicy} object. Arguments are defined in the Argument section above.}
+\item{\code{new(epsilon = 0.1, N = 1000, time_steps = NULL)}}{ Generates a new \code{EpsilonFirstPolicy}
+object. Arguments are defined in the Argument section above.}
 }
 
 \describe{
@@ -77,9 +76,9 @@ based on the reward received, and, potentially, the current context.
 
 horizon            <- 100L
 simulations        <- 100L
-weights          <- c(0.9, 0.1, 0.1)
+weights            <- c(0.9, 0.1, 0.1)
 
-policy             <- EpsilonFirstPolicy$new(epsilon = 0.5)
+policy             <- EpsilonFirstPolicy$new(time_steps = 50)
 bandit             <- BasicBernoulliBandit$new(weights = weights)
 agent              <- Agent$new(policy, bandit)
 
@@ -89,17 +88,21 @@ plot(history, type = "cumulative")
 plot(history, type = "arms")
 }
 \references{
-Gittins, J., Glazebrook, K., & Weber, R. (2011). Multi-armed bandit allocation indices. John Wiley & Sons. (Original work published 1989)
+Gittins, J., Glazebrook, K., & Weber, R. (2011). Multi-armed bandit allocation indices. John Wiley & Sons.
+(Original work published 1989)
 
-Sutton, R. S. (1996). Generalization in reinforcement learning: Successful examples using sparse coarse coding. In Advances in neural information processing systems (pp. 1038-1044).
+Sutton, R. S. (1996). Generalization in reinforcement learning: Successful examples using sparse coarse
+coding. In Advances in neural information processing systems (pp. 1038-1044).
 
-Strehl, A., & Littman, M. (2004). Exploration via model based interval estimation. In International Conference on Machine Learning, number Icml.
+Strehl, A., & Littman, M. (2004). Exploration via model based interval estimation. In International
+Conference on Machine Learning, number Icml.
 }
 \seealso{
 Core contextual classes: \code{\link{Bandit}}, \code{\link{Policy}}, \code{\link{Simulator}},
 \code{\link{Agent}}, \code{\link{History}}, \code{\link{Plot}}
 
-Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},  \code{\link{OfflineReplayEvaluatorBandit}}
+Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},
+\code{\link{OfflineReplayEvaluatorBandit}}
 
-Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualThompsonSamplingPolicy}}
+Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualLinTSPolicy}}
 }

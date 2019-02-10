@@ -82,8 +82,7 @@ simulations   <- 30L
 
 bandit        <- ContextualLogitBandit$new(k = 5, d = 5, intercept = TRUE)
 
-agents        <- list(Agent$new(ContextualThompsonSamplingPolicy$new(delta=0.5,
-                                                       R=0.01, epsilon=0.5), bandit),
+agents        <- list(Agent$new(ContextualLinTSPolicy$new(0.1), bandit),
                       Agent$new(EpsilonGreedyPolicy$new(0.1), bandit),
                       Agent$new(LinUCBGeneralPolicy$new(0.6), bandit),
                       Agent$new(ContextualEpochGreedyPolicy$new(8), bandit),
@@ -101,7 +100,8 @@ plot(history, type = "cumulative", regret = FALSE,
 Core contextual classes: \code{\link{Bandit}}, \code{\link{Policy}}, \code{\link{Simulator}},
 \code{\link{Agent}}, \code{\link{History}}, \code{\link{Plot}}
 
-Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},  \code{\link{OfflineReplayEvaluatorBandit}}
+Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},
+\code{\link{OfflineReplayEvaluatorBandit}}
 
-Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualThompsonSamplingPolicy}}
+Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualLinTSPolicy}}
 }

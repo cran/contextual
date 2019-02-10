@@ -54,7 +54,7 @@ library(contextual)
 #
 # ------------------------------------------------------------------------------------------------------------
 
-horizon                           <- 5000L
+horizon                           <- 10000L
 simulations                       <- 1L
 
 # Bandit representing Male and Female actual preferences for sports and movies.
@@ -62,7 +62,7 @@ simulations                       <- 1L
 #                     S----M------------> Arm 1:   Sport
 #                     |    |              Arm 2:   Movie
 #                     |    |
-weights                           <- matrix( c(0.4, 0.3,    #-----> Context: Male
+weights <- matrix( c(0.4, 0.3,    #-----> Context: Male
                      0.8, 0.7),   #-----> Context: Female
 
                     nrow = 2, ncol = 2, byrow = TRUE)
@@ -77,7 +77,8 @@ policy                            <- RandomPolicy$new()
 bandit                            <- ContextualBernoulliBandit$new(weights = weights)
 agent                             <- Agent$new(policy, bandit, "Random")
 
-simulation                        <- Simulator$new(agent, horizon, simulations, save_context = TRUE, do_parallel = FALSE)
+simulation                        <- Simulator$new(agent, horizon, simulations,
+                                                   save_context = TRUE, do_parallel = FALSE)
 history                           <- simulation$run()
 
 u_dt                              <- history$get_data_table()
@@ -91,11 +92,13 @@ print(paste("Movie:",sum(u_dt[choice==2]$reward)/nrow(u_dt[choice==2]))) # 0.5 C
 
 # This produces a data.table with *unbiased* historical data that reproduces the original CTR on replay.
 
-bandit                            <- OfflineReplayEvaluatorBandit$new(u_dt,2,2)
+f                                 <- formula("reward ~ choice | X.1 + X.2")
+
+bandit                            <- OfflineReplayEvaluatorBandit$new(formula = f, data = u_dt, k = 2 , d = 2)
 policy                            <- EpsilonGreedyPolicy$new(0.1)
 agent                             <- Agent$new(policy, bandit, "OfflineLinUCB")
 
-simulation                        <- Simulator$new(agent, horizon, simulations, reindex = TRUE, do_parallel = FALSE)
+simulation                        <- Simulator$new(agent, horizon, simulations, do_parallel = FALSE)
 history                           <- simulation$run()
 
 ru_dt                             <- history$get_data_table()
@@ -123,9 +126,9 @@ BiasedPolicy                      <- R6::R6Class(
     class_name = "BiasedPolicy",
     get_action = function(t, context) {
       if(context$X[1]==1) {           # 1: Male || 0: Female.
-        prob                      <- c(0.75,0.25)            # Editor thinks men like Sport articles more.
+        prob                      <- c(0.75,0.25)    # Editor thinks men like Sport articles more.
       } else {
-        prob                      <- c(0.25,0.75)            # Editor thinks women like Movie articles more.
+        prob                      <- c(0.25,0.75)    # Editor thinks women like Movie articles more.
       }
       action$choice               <- sample.int(context$k, 1, replace = TRUE, prob = prob)
 
@@ -144,7 +147,8 @@ policy                            <- BiasedPolicy$new()
 bandit                            <- ContextualBernoulliBandit$new(weights = weights)
 agent                             <- Agent$new(policy, bandit, "Random")
 
-simulation                        <- Simulator$new(agent, horizon, simulations, save_context = TRUE, do_parallel = FALSE)
+simulation                        <- Simulator$new(agent, horizon, simulations,
+                                                   save_context = TRUE, do_parallel = FALSE)
 history                           <- simulation$run()
 
 b_dt                              <- history$get_data_table()
@@ -159,11 +163,13 @@ print(paste("Movie:",sum(b_dt[choice==2]$reward)/nrow(b_dt[choice==2]))) # 0.6 C
 # So we now have a data.table with *biased* historical data.
 # Lets see what happens if we run the same simulation again:
 
-bandit                            <- OfflineReplayEvaluatorBandit$new(b_dt,2,2)
+f                                 <- formula("reward ~ choice | X.1 + X.2")
+
+bandit                            <- OfflineReplayEvaluatorBandit$new(formula = f, data = b_dt, k = 2 , d = 2)
 policy                            <- EpsilonGreedyPolicy$new(0.1)
 agent                             <- Agent$new(policy, bandit, "rb")
 
-simulation                        <- Simulator$new(agent, horizon, simulations, reindex = TRUE, do_parallel = FALSE)
+simulation                        <- Simulator$new(agent, horizon, simulations, do_parallel = FALSE)
 history                           <- simulation$run()
 rb_dt                             <- history$get_data_table()
 
@@ -178,16 +184,18 @@ print(paste("Movie:",sum(rb_dt[choice==2]$reward)/nrow(rb_dt[choice==2]))) # 0.6
 # ----------------------------------   Biased policy repaired with prop      ---------------------------------
 # ------------------------------------------------------------------------------------------------------------
 
+f                                 <- formula("reward ~ choice | X.1 + X.2 | propensity")
 
-bandit                            <- OfflinePropensityWeightingBandit$new(b_dt,2,2)
+bandit                            <- OfflinePropensityWeightingBandit$new(formula = f, data = b_dt,
+                                                                          k = 2 , d = 2)
 policy                            <- EpsilonGreedyPolicy$new(0.1)
 agent                             <- Agent$new(policy, bandit, "prop")
 
-simulation                        <- Simulator$new(agent, horizon, simulations, reindex = TRUE, do_parallel = FALSE)
+simulation                        <- Simulator$new(agent, horizon, simulations, do_parallel = FALSE)
 history                           <- simulation$run()
 prop_dt                           <- history$get_data_table()
 
-# Happily, inverse propensity scoring can help remove the bias again:
+# Happily, inverse propensity score weighting can help remove the bias again:
 
 print("2c. Offline biased policy evaluation, inverse propensity scores.")
 
@@ -195,17 +203,36 @@ print(paste("Sport:",sum(prop_dt[choice==1]$reward)/nrow(prop_dt[choice==1]))) #
 print(paste("Movie:",sum(prop_dt[choice==2]$reward)/nrow(prop_dt[choice==2]))) # 0.5 CTR Movie again, yay!
 
 
-## TODO: Below building blocks of future more extensive demo.
+# ------------------------------------------------------------------------------------------------------------
+# ----------------------------------   Biased policy repaired with estimated prop  ---------------------------
+# ------------------------------------------------------------------------------------------------------------
 
-# #choice:1 is Sport choice:2 is Movie, and is_male:1 is male is_male:2 is female
-#
-# b_dt[, is_male := lapply(.SD, function(x) paste( unlist(x)[1], collapse=',') ),
-#     by=1:b_dt[, .N], .SDcols = c("context")]
-# ...
-# #The number of time steps (2953) that offline bandit could replay:
-# print(rb_dt$cumulative$OfflineLinUCB$t)
-# # LinUCB overwhelmingly chooses Movie: 91% of all choices
-# print(nrow(rb_dt$data[choice==1])/nrow(rb_dt$data)*100)
-# # And is able to attain a 0.59 CTR on that arm
-# print(rb_dt$cumulative$OfflineLinUCB$cum_reward_rate)
+if(!require(twang)) install.packages("twang")
+
+b_dt$choice                       <- b_dt$choice - 1
+ip                                <- ps(choice ~ X.1 + X.2, data = as.data.frame(b_dt), n.trees = 2000,
+                                        stop.method = "es.mean", verbose=FALSE)
+b_dt$choice                       <- b_dt$choice + 1
+
+weights                           <- get.weights(ip, stop.method = "es.mean")  # already inverted
+b_dt$p                            <- weights
+
+f                                 <- formula("reward ~ choice | X.1 + X.2 | p")
+
+bandit                            <- OfflinePropensityWeightingBandit$new(formula = f, data = b_dt,
+                                                                          k = 2 , d = 2, inverted = TRUE)
+policy                            <- EpsilonGreedyPolicy$new(0.1)
+agent                             <- Agent$new(policy, bandit, "prop")
+
+simulation                        <- Simulator$new(agent, horizon, simulations, do_parallel = FALSE)
+history                           <- simulation$run()
+prop_dt                           <- history$get_data_table()
+
+# When no saved propensity scores, estimated propensity scores can also help remove bias:
+
+print("2c. Offline biased policy evaluation, inverse propensity scores.")
+
+print(paste("Sport:",sum(prop_dt[choice==1]$reward)/nrow(prop_dt[choice==1]))) # 0.6 CTR Sport again, yay!
+print(paste("Movie:",sum(prop_dt[choice==2]$reward)/nrow(prop_dt[choice==2]))) # 0.5 CTR Movie again, yay!
+
 

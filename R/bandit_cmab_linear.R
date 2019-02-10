@@ -8,6 +8,7 @@ ContextualLinearBandit <- R6::R6Class(
     betas   = NULL,
     sigma   = NULL,
     binary  = NULL,
+    weights = NULL,
     class_name = "ContextualLinearBandit",
     initialize  = function(k, d, sigma = 0.1, binary_rewards = FALSE) {
       self$k                                    <- k
@@ -22,8 +23,8 @@ ContextualLinearBandit <- R6::R6Class(
     get_context = function(t) {
 
       X                                         <- rnorm(self$d)
-      reward_vector                             <- X %*% self$betas
-      reward_vector                             <- reward_vector + rnorm(self$k, sd = self$sigma)
+      self$weights                              <- X %*% self$betas
+      reward_vector                             <- self$weights + rnorm(self$k, sd = self$sigma)
 
       if (isTRUE(self$binary)) {
         self$rewards                            <- rep(0,self$k)
@@ -39,7 +40,7 @@ ContextualLinearBandit <- R6::R6Class(
     },
     get_reward = function(t, context_common, action) {
       rewards        <- self$rewards
-      optimal_arm    <- which_max_tied(rewards)
+      optimal_arm    <- which_max_tied(self$weights)
       reward         <- list(
         reward                   = rewards[action$choice],
         optimal_arm              = optimal_arm,
@@ -122,18 +123,21 @@ ContextualLinearBandit <- R6::R6Class(
 #'
 #' @references
 #'
-#' Riquelme, C., Tucker, G., & Snoek, J. (2018). Deep Bayesian Bandits Showdown: An Empirical Comparison of Bayesian Deep Networks for Thompson Sampling. arXiv preprint arXiv:1802.09127.
+#' Riquelme, C., Tucker, G., & Snoek, J. (2018). Deep Bayesian Bandits Showdown: An Empirical Comparison of
+#' Bayesian Deep Networks for Thompson Sampling. arXiv preprint arXiv:1802.09127.
 #'
-#' Implementation follows \url{https://github.com/tensorflow/models/tree/master/research/deep_contextual_bandits}
+#' Implementation follows
+#' \url{https://github.com/tensorflow/models/tree/master/research/deep_contextual_bandits}
 #'
 #' @seealso
 #'
 #' Core contextual classes: \code{\link{Bandit}}, \code{\link{Policy}}, \code{\link{Simulator}},
 #' \code{\link{Agent}}, \code{\link{History}}, \code{\link{Plot}}
 #'
-#' Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},  \code{\link{OfflineReplayEvaluatorBandit}}
+#' Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},
+#' \code{\link{OfflineReplayEvaluatorBandit}}
 #'
-#' Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualThompsonSamplingPolicy}}
+#' Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualLinTSPolicy}}
 #'
 #' @examples
 #' \dontrun{

@@ -20,7 +20,6 @@ test_that("History summary and print", {
 
 })
 
-
 test_that("History save_csv without filename", {
 
   csv_comparison_file <- read.csv("history_test.ref")
@@ -33,9 +32,8 @@ test_that("History save_csv without filename", {
 test_that("History save_csv without filename", {
 
   csv_comparison_file <- read.csv("history_test.ref")
-  history$delete_empty_rows()
-  history$save_csv("save.csv")
-  import_file <- read.csv("save.csv")
+  history$save_csv("history_test.csv")
+  import_file <- read.csv("history_test.csv")
   expect_equal(csv_comparison_file,  import_file)
 
 })
@@ -43,8 +41,8 @@ test_that("History save_csv without filename", {
 test_that("History save_csv with context", {
 
   csv_comparison_file <- read.csv("history_context_test.ref")
-  history$save_csv("save_context.csv", context_to_columns = TRUE)
-  import_file <- read.csv("save_context.csv")
+  history$save_csv("history_context_test.csv")
+  import_file <- read.csv("history_context_test.csv")
   expect_equal(csv_comparison_file,  import_file)
 
 })
@@ -80,8 +78,8 @@ test_that("History inc theta", {
 test_that("History save_csv inc theta removal without filename", {
 
   csv_comparison_file <- read.csv("history_theta_test.ref")
-  history$save_csv("save_t.csv")
-  import_file <- read.csv("save_t.csv")
+  history$save_csv("history_theta_test.csv")
+  import_file <- read.csv("history_theta_test.csv")
   expect_equal(csv_comparison_file,  import_file)
 
 })
@@ -89,15 +87,16 @@ test_that("History save_csv inc theta removal without filename", {
 test_that("History save_csv nc theta removal theta with context", {
 
   csv_comparison_file <- read.csv("history_context_theta_test.ref")
-  history$save_csv("save_context_t.csv", context_to_columns = TRUE)
-  import_file <- read.csv("save_context_t.csv")
+  history$save_csv("history_context_theta_test.csv")
+  import_file <- read.csv("history_context_theta_test.csv")
   expect_equal(csv_comparison_file,  import_file)
 
 })
 
 test_that("Limit agents", {
 
-  expect_equal_to_reference(capture.output(summary(history, limit_agents = c("Exp3","UCB1"))), file = "summary_history_limit.rds")
+  expect_equal_to_reference(capture.output(summary(history, limit_agents = c("Exp3","UCB1"))),
+                            file = "summary_history_limit.rds")
 
 })
 

@@ -7,6 +7,8 @@
 Illustrates precaching of contexts and rewards.
 }
 \details{
+TODO: Fix "attempt to select more than one element in integerOneIndex"
+
 Contextual extension of \code{\link{BasicBernoulliBandit}}.
 
 Contextual extension of \code{\link{BasicBernoulliBandit}} where a user specified \code{d x k} dimensional
@@ -102,7 +104,8 @@ plot(history, type = "cumulative")
 Core contextual classes: \code{\link{Bandit}}, \code{\link{Policy}}, \code{\link{Simulator}},
 \code{\link{Agent}}, \code{\link{History}}, \code{\link{Plot}}
 
-Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},  \code{\link{OfflineReplayEvaluatorBandit}}
+Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},
+\code{\link{OfflineReplayEvaluatorBandit}}
 
-Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualThompsonSamplingPolicy}}
+Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualLinTSPolicy}}
 }

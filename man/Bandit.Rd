@@ -6,7 +6,7 @@
 \alias{get_context}
 \alias{generate_bandit_data}
 \alias{bandit}
-\title{Bandit}
+\title{Bandit: Superclass}
 \description{
 Parent or superclass of all \code{\{contextual\}} \code{Bandit} subclasses.
 }
@@ -84,7 +84,8 @@ Pregenerate \code{contexts} and \code{rewards} here.
 Core contextual classes: \code{\link{Bandit}}, \code{\link{Policy}}, \code{\link{Simulator}},
 \code{\link{Agent}}, \code{\link{History}}, \code{\link{Plot}}
 
-Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},  \code{\link{OfflineReplayEvaluatorBandit}}
+Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},
+\code{\link{OfflineReplayEvaluatorBandit}}
 
-Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualThompsonSamplingPolicy}}
+Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualLinTSPolicy}}
 }

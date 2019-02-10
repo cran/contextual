@@ -19,6 +19,7 @@ Plot <- R6::R6Class(
                           xlim               = NULL,
                           ylim               = NULL,
                           legend             = TRUE,
+                          log                = "",
                           use_colors         = TRUE,
                           color_step         = 1,
                           lty_step           = 1,
@@ -59,6 +60,70 @@ Plot <- R6::R6Class(
         disp_data_name      = disp_data_name,
         ylab_title          = ylab_title,
         use_colors          = use_colors,
+        log                 = log,
+        legend              = legend,
+        disp                = disp,
+        plot_only_disp      = plot_only_disp,
+        no_par              = no_par,
+        interval            = interval,
+        color_step          = color_step,
+        lty_step            = lty_step,
+        lwd                 = lwd,
+        xlim                = xlim,
+        ylim                = ylim,
+        legend_labels       = legend_labels,
+        legend_border       = legend_border,
+        legend_position     = legend_position,
+        legend_title        = legend_title,
+        limit_agents        = limit_agents,
+        limit_context       = limit_context,
+        traces              = traces,
+        traces_max          = traces_max,
+        traces_alpha        = traces_alpha,
+        smooth              = smooth,
+        rate                = rate
+      )
+
+      invisible(recordPlot())
+    },
+
+    optimal = function(history,
+                       disp               = NULL,
+                       plot_only_disp     = FALSE,
+                       rate               = FALSE,
+                       interval           = 1,
+                       traces             = FALSE,
+                       traces_max         = 100,
+                       traces_alpha       = 0.3,
+                       smooth             = FALSE,
+                       no_par             = FALSE,
+                       xlim               = NULL,
+                       ylim               = NULL,
+                       legend             = TRUE,
+                       use_colors         = TRUE,
+                       log                = "",
+                       color_step         = 1,
+                       lty_step           = 1,
+                       lwd                = 2,
+                       legend_labels      = NULL,
+                       legend_border      = NULL,
+                       legend_position    = "topleft",
+                       legend_title       = NULL,
+                       limit_agents       = NULL,
+                       limit_context      = NULL) {
+
+      self$history <- history
+
+      ylab_title     <- "Optimal action"
+      line_data_name <- "optimal"
+      disp_data_name   <- "optimal_none"
+
+      private$do_plot(
+        line_data_name      = line_data_name,
+        disp_data_name      = disp_data_name,
+        ylab_title          = ylab_title,
+        use_colors          = use_colors,
+        log                 = log,
         legend              = legend,
         disp                = disp,
         plot_only_disp      = plot_only_disp,
@@ -84,6 +149,7 @@ Plot <- R6::R6Class(
       invisible(recordPlot())
     },
 
+
     average = function(history,
                        regret             = TRUE,
                        disp               = NULL,
@@ -99,9 +165,11 @@ Plot <- R6::R6Class(
                        ylim               = NULL,
                        legend             = TRUE,
                        use_colors         = TRUE,
+                       log                = "",
                        color_step         = 1,
                        lty_step           = 1,
                        lwd                = 2,
+                       cum_average        = FALSE,
                        legend_labels      = NULL,
                        legend_border      = NULL,
                        legend_position    = "topleft",
@@ -125,6 +193,7 @@ Plot <- R6::R6Class(
         disp_data_name      = disp_data_name,
         ylab_title          = ylab_title,
         use_colors          = use_colors,
+        log                 = log,
         legend              = legend,
         disp                = disp,
         plot_only_disp      = plot_only_disp,
@@ -139,12 +208,14 @@ Plot <- R6::R6Class(
         legend_border       = legend_border,
         legend_position     = legend_position,
         legend_title        = legend_title,
+        cum_average         = cum_average,
         limit_agents        = limit_agents,
         limit_context       = limit_context,
         traces              = traces,
         traces_max          = traces_max,
         traces_alpha        = traces_alpha,
-        smooth              = smooth
+        smooth              = smooth,
+        rate                = rate
       )
 
       invisible(recordPlot())
@@ -155,6 +226,7 @@ Plot <- R6::R6Class(
                     no_par             = FALSE,
                     legend             = TRUE,
                     use_colors         = TRUE,
+                    log                = "",
                     interval           = 1,
                     xlim               = NULL,
                     ylim               = NULL,
@@ -198,7 +270,7 @@ Plot <- R6::R6Class(
       }
 
       ylab_title        <- "Arm choice %"
-      agent_levels      <- levels(as.factor(dt$agent))
+      agent_levels      <- levels(droplevels(dt$agent))
 
       if (length(agent_levels) > 1) {
         warning(strwrap(
@@ -297,6 +369,12 @@ Plot <- R6::R6Class(
         legend_position <- "bottomright"
       }
 
+      if (!is.null(legend_labels)) {
+        legend_labels <- legend_labels
+      } else {
+        legend_labels <- paste("arm", arm_levels, sep = " ")
+      }
+
       axis(1)
       axis(2)
       title(xlab = "Time Step")
@@ -306,7 +384,7 @@ Plot <- R6::R6Class(
         legend(
           legend_position,
           NULL,
-          paste("arm", arm_levels, sep = " "),
+          legend_labels,
           col = adjustcolor(cl, alpha.f = 0.6),
           title = legend_title,
           pch = 15,
@@ -323,12 +401,17 @@ Plot <- R6::R6Class(
     }
   ),
   private = list(
+    cum_average = function(cx) {
+      cx <- c(0,cx)
+      cx[(2):length(cx)] - cx[1:(length(cx) - 1)]
+    },
     do_plot = function(line_data_name      = line_data_name,
                        disp_data_name      = disp_data_name,
                        disp                = NULL,
                        plot_only_disp      = FALSE,
                        ylab_title          = NULL,
                        use_colors          = FALSE,
+                       log                 = "",
                        legend              = TRUE,
                        no_par              = FALSE,
                        xlim                = NULL,
@@ -346,12 +429,29 @@ Plot <- R6::R6Class(
                        traces              = NULL,
                        traces_max          = 100,
                        traces_alpha        = 0.3,
-                       smooth              = FALSE) {
+                       cum_average         = FALSE,
+                       smooth              = FALSE,
+                       rate                = FALSE) {
+
+      cum_flip <- FALSE
+      if((line_data_name=="reward" || line_data_name=="regret") && isTRUE(cum_average)) {
+        line_data_name <- paste0("cum_",line_data_name)
+        cum_flip = TRUE
+      }
 
       if (interval==1 && as.integer(self$history$meta$sim$max_t) > 1850) {
         interval <- ceiling(as.integer(self$history$meta$sim$max_t)/1850) # nocov
+        if(isTRUE(cum_average) && isTRUE(cum_flip))  {
+           warning(strwrap(
+            prefix = " ", initial = "",
+            paste0("## As cum_reward was set to TRUE while plotting more than 1850 time steps,
+            the reward plot has been smoothed automatically using a window length of ",interval,
+            " timesteps.")
+          ),
+          call. = FALSE
+          )
+        }
       }
-
 
       if (!is.null(disp) && disp %in% c("sd", "var", "ci")) {
 
@@ -373,22 +473,51 @@ Plot <- R6::R6Class(
           )
       }
 
+      if (!is.null(xlim)) {
+        min_xlim <- xlim[1]
+        max_xlim <- xlim[2]
+      } else {
+        min_xlim <- 1
+        max_xlim <- data[, max(t)]
+      }
+
+      agent_levels <- levels(droplevels(data$agent))
+      n_agents <- length(agent_levels)
+
+      data.table::setorder(data, agent, t)
+
+      if(cum_flip==TRUE) {
+        if (line_data_name == "cum_reward") {
+          line_data_name <- "reward"
+          for (agent_name in agent_levels) {
+            data[data$agent == agent_name,
+                 reward := private$cum_average(data[data$agent == agent_name]$cum_reward)/interval]
+          }
+        } else {
+          line_data_name <- "cum_regret"
+          for (agent_name in agent_levels) {
+            data[data$agent == agent_name,
+                 regret := private$cum_average(data[data$agent == agent_name]$cum_regret)/interval]
+          }
+        }
+      }
+
+      if(!is.null(xlim)) data <- data[t>=xlim[1] & t<=xlim[2]]
+
       if(!is.null(limit_context)) {
         data <- data[sapply(dt$context,function(x)all(x[limit_context]==1))]
       }
 
       data.table::setorder(data, agent, t)
 
-      agent_levels <- levels(as.factor(data$agent))
-      n_agents <- length(agent_levels)
 
       if (isTRUE(smooth)) {
         for (agent_name in agent_levels) {
           data[data$agent == agent_name, c("t", line_data_name) :=
-            supsmu(data[data$agent == agent_name]$t, data[data$agent == agent_name][[line_data_name]])]
+                 supsmu(data[data$agent == agent_name]$t, data[data$agent == agent_name][[line_data_name]])]
           if (!is.null(disp)) {
             data[data$agent == agent_name, c("t", disp_data_name) :=
-              supsmu(data[data$agent == agent_name]$t, data[data$agent == agent_name][[disp_data_name]])]
+                   supsmu(data[data$agent == agent_name]$t, data[data$agent == agent_name][[disp_data_name]])]
           }
         }
       }
@@ -407,7 +536,8 @@ Plot <- R6::R6Class(
       }
 
       if (isTRUE(plot_only_disp)) {
-        if(is.null(disp)) stop("Need to set disp to 'var','sd' or 'ci' when plot_only_disp is TRUE", call. = FALSE)
+        if(is.null(disp)) stop("Need to set disp to 'var','sd' or 'ci' when plot_only_disp is TRUE",
+                               call. = FALSE)
         line_data_name = disp_data_name
       }
 
@@ -424,27 +554,25 @@ Plot <- R6::R6Class(
         lty_step <- n_agents
         lt <- rep(1:round(lty_step), each = round(n_agents / lty_step))
       }
-      if (!is.null(disp) && !isTRUE(plot_only_disp)) {
+
+      if (!is.null(disp) && !isTRUE(plot_only_disp) &&
+          !is.na(data[, min(disp_lower)]) && !is.na(data[, min(disp_upper)])) {
         min_ylim <- data[, min(disp_lower)]
         max_ylim <- data[, max(disp_upper)]
       } else {
         min_ylim <- data[, min(data[[line_data_name]])]
         max_ylim <- data[, max(data[[line_data_name]])]
       }
-      if (!is.null(xlim)) {
-        min_xlim <- xlim[1]
-        max_xlim <- xlim[2]
-      } else {
-        min_xlim <- 1
-        max_xlim <- data[, max(t)]
-      }
+
+
       if (!is.null(ylim)) {
         min_ylim <- ylim[1]
         max_ylim <- ylim[2]
       }
       plot.window(
         xlim = c(min_xlim, max_xlim),
-        ylim = c(min_ylim, max_ylim)
+        ylim = c(min_ylim, max_ylim),
+        log = log
       )
 
       if (isTRUE(traces) && !isTRUE(plot_only_disp)) {
@@ -464,10 +592,10 @@ Plot <- R6::R6Class(
               )
             } else {
               lines(dt[dt$agent == agent_name & dt$sim == as]$t,
-                dt[dt$agent == agent_name &
-                  dt$sim == as][[line_data_name]],
-                lwd = lwd,
-                col = rgb(0.8, 0.8, 0.8, traces_alpha)
+                    dt[dt$agent == agent_name &
+                         dt$sim == as][[line_data_name]],
+                    lwd = lwd,
+                    col = rgb(0.8, 0.8, 0.8, traces_alpha)
               )
             }
           }
@@ -642,6 +770,10 @@ Plot <- R6::R6Class(
 #'   \item{\code{ylim}}{
 #'      \code{(c(integer,integer), NULL)} Sets y-axis limits.
 #'   }
+#'   \item{\code{log}}{
+#'      \code{(character , "")} A character string which contains "x" if the x axis is to be logarithmic,
+#'      "y" if the y axis is to be logarithmic and "xy" or "yx" if both axes are to be logarithmic.
+#'   }
 #'   \item{\code{use_colors}}{
 #'      \code{(logical, TRUE)} If use_colors is FALSE, plots will be in grayscale.
 #'      Otherwise, plots will make use of a color palette (default).
@@ -668,6 +800,10 @@ Plot <- R6::R6Class(
 #'   \item{\code{interval}}{
 #'      \code{(integer, NULL)} Plot only every t%%interval==0 data point.
 #'   }
+#'   \item{\code{cum_average}}{
+#'      \code{(logical , FALSE)} Calculates moving average from cum_reward or cum_regret with step
+#'      size \code{interval}.
+#'   }
 #'   \item{\code{color_step}}{
 #'      \code{(integer, 1)} When > 1, the plot cycles through \code{nr_agents/color_step} colors.
 #'   }
@@ -685,9 +821,10 @@ Plot <- R6::R6Class(
 #' Core contextual classes: \code{\link{Bandit}}, \code{\link{Policy}}, \code{\link{Simulator}},
 #' \code{\link{Agent}}, \code{\link{History}}, \code{\link{Plot}}
 #'
-#' Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},  \code{\link{OfflineReplayEvaluatorBandit}}
+#' Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},
+#' \code{\link{OfflineReplayEvaluatorBandit}}
 #'
-#' Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualThompsonSamplingPolicy}}
+#' Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualLinTSPolicy}}
 #'
 #' @examples
 #' \dontrun{

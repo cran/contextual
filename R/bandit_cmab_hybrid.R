@@ -13,10 +13,6 @@ ContextualHybridBandit <- R6::R6Class(
     class_name = "ContextualHybridBandit",
     initialize  = function(k, shared_features, unique_features, sigma = 1.0) {
 
-      assert_count(shared_features, positive = TRUE)
-      assert_count(unique_features, positive = TRUE)
-      assert_number(sigma, lower = 0)
-
       self$sigma   <- sigma
       self$k       <- k                                             ## nr of arms
       self$s       <- shared_features                               ## nr shared features/betas
@@ -46,14 +42,15 @@ ContextualHybridBandit <- R6::R6Class(
       trb          <- trb + rnorm(1,0,self$sigma)
       rwrd         <- rbinom(1,1,1/(1+exp(-trb)))
       reward       <- list(
-        reward                   = rwrd,
-        optimal_reward_value     = 1
+        reward                   = rwrd
       )
     }
   )
 )
 
 #' Bandit: ContextualHybridBandit
+#'
+#' TODO: Optimization.
 #'
 #' Extension of \code{ContextualLogitBandit} modeling hybrid rewards with a combination
 #' of unique (or "disjoint") and shared contextual features.
@@ -125,9 +122,10 @@ ContextualHybridBandit <- R6::R6Class(
 #' Core contextual classes: \code{\link{Bandit}}, \code{\link{Policy}}, \code{\link{Simulator}},
 #' \code{\link{Agent}}, \code{\link{History}}, \code{\link{Plot}}
 #'
-#' Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},  \code{\link{OfflineReplayEvaluatorBandit}}
+#' Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},
+#' \code{\link{OfflineReplayEvaluatorBandit}}
 #'
-#' Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualThompsonSamplingPolicy}}
+#' Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualLinTSPolicy}}
 #'
 #' @examples
 #' \dontrun{
@@ -137,8 +135,7 @@ ContextualHybridBandit <- R6::R6Class(
 #'
 #' bandit        <- ContextualHybridBandit$new(k = 100, shared_features = 10, unique_features = 2)
 #'
-#' agents        <- list(Agent$new(ContextualThompsonSamplingPolicy$new(delta=0.5,
-#'                                                    R=0.01, epsilon=0.5), bandit),
+#' agents        <- list(Agent$new(ContextualLinTSPolicy$new(0.1), bandit),
 #'                       Agent$new(EpsilonGreedyPolicy$new(0.1), bandit),
 #'                       Agent$new(LinUCBGeneralPolicy$new(0.6), bandit),
 #'                       Agent$new(ContextualEpochGreedyPolicy$new(8), bandit),

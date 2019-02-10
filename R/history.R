@@ -1,5 +1,4 @@
 #' @importFrom data.table data.table as.data.table set setorder setkeyv copy uniqueN setcolorder tstrsplit
-#' @import checkmate
 #' @export
 History <- R6::R6Class(
   "History",
@@ -8,11 +7,9 @@ History <- R6::R6Class(
     n            = NULL,
     save_theta   = NULL,
     save_context = NULL,
-    context_multiple_columns = NULL,
     context_columns_initialized = NULL,
-    initialize = function(n = 1, save_context = FALSE, context_multiple_columns = FALSE, save_theta = FALSE) {
+    initialize = function(n = 1, save_context = FALSE, save_theta = FALSE) {
       self$n                           <- n
-      self$context_multiple_columns    <- context_multiple_columns
       self$save_context                <- save_context
       self$save_theta                  <- save_theta
       self$reset()
@@ -55,30 +52,29 @@ History <- R6::R6Class(
       } else {
         optimal_arm <- reward[["optimal_arm"]]
       }
-
+      if (!is.vector(context_value)) context_value <- as.vector(context_value)
+      if (save_context && !is.null(colnames(context_value))) {
+        context_value <- context_value[,!colnames(context_value) %in% "(Intercept)"]
+      }
       if (save_context || save_theta) {
         if (!isTRUE(self$save_theta)) {
-          if(isTRUE(self$context_multiple_columns)) {
-            if(!isTRUE(self$context_columns_initialized)) {
-              private$initialize_data_tables(length(context_value))
-              self$context_columns_initialized <- TRUE
-            }
-            data.table::set(private$.data, index, (12L:(11L+length(context_value))),
-                            as.list(as.vector(context_value)))
-          } else {
-            data.table::set(private$.data, index, 12L, list(list(context_value)))
+          if(!isTRUE(self$context_columns_initialized)) {
+            private$initialize_data_tables(length(context_value))
+            self$context_columns_initialized <- TRUE
           }
+          data.table::set(private$.data, index, (14L:(13L+length(context_value))),
+                          as.list(as.vector(context_value)))
         } else if (!isTRUE(self$save_context)) {
-          data.table::set(private$.data, index, 12L, list(list(theta_value)))
+          data.table::set(private$.data, index, 14L, list(list(theta_value)))
         } else {
-          data.table::set(private$.data, index, 12L, list(list(context_value)))
-          data.table::set(private$.data, index, 13L, list(list(theta_value)))
+          data.table::set(private$.data, index, 14L, list(list(context_value)))
+          data.table::set(private$.data, index, 15L, list(list(theta_value)))
         }
       }
       data.table::set(
         private$.data,
         index,
-        1L:11L,
+        1L:13L,
         list(
           t,
           k,
@@ -86,17 +82,19 @@ History <- R6::R6Class(
           simulation_index,
           action[["choice"]],
           reward[["reward"]],
-          as.integer(reward$reward == optimal_reward),
           as.integer(optimal_arm),
           optimal_reward,
           propensity,
-          agent_name
+          agent_name,
+          reward[["regret"]],
+          reward[["cum_reward"]],
+          reward[["cum_regret"]]
         )
       )
       invisible(self)
     },
     get_agent_list = function() {
-      levels(as.factor(private$.data$agent))
+      levels(private$.data$agent)
     },
     get_agent_count = function() {
       length(self$get_agent_list())
@@ -104,8 +102,13 @@ History <- R6::R6Class(
     get_simulation_count = function() {
       length(levels(as.factor(private$.data$sim)))
     },
+    get_arm_choice_percentage = function(limit_agents) {
+      private$.data[agent %in% limit_agents][sim != 0][order(choice),
+                                                       .(choice = unique(choice),
+                                                         percentage = tabulate(choice)/.N)]
+    },
     get_meta_data = function() {
-        private$.meta
+      private$.meta
     },
     set_meta_data = function(key, value, group = "sim", agent_name = NULL) {
       upsert <- list()
@@ -120,7 +123,8 @@ History <- R6::R6Class(
         private$.meta[[group]] <- append(private$.meta[[group]],upsert)
       }
     },
-    get_cumulative_data = function(limit_agents = NULL, limit_cols = NULL, interval = 1) {
+    get_cumulative_data = function(limit_agents = NULL, limit_cols = NULL, interval = 1,
+                                   cum_average = FALSE) {
       if (is.null(limit_agents)) {
         if (is.null(limit_cols)) {
           private$.cum_stats[t %% interval == 0 | t == 1]
@@ -167,7 +171,7 @@ History <- R6::R6Class(
         } else {
           if (as_list) {
             private$data_table_to_named_nested_list(cum_results[, mget(limit_cols)]
-                                            [agent %in% limit_agents], transpose = FALSE)
+                                                    [agent %in% limit_agents], transpose = FALSE)
           } else {
             cum_results[, mget(limit_cols)][agent %in% limit_agents]
           }
@@ -177,9 +181,9 @@ History <- R6::R6Class(
     save = function(filename = NA) {
       if (is.na(filename)) {
         filename <- paste("contextual_data_",
-          format(Sys.time(), "%y%m%d_%H%M%S"),
-          ".RData",
-          sep = ""
+                          format(Sys.time(), "%y%m%d_%H%M%S"),
+                          ".RData",
+                          sep = ""
         )
       }
       attr(private$.data, "meta") <- private$.meta
@@ -202,7 +206,7 @@ History <- R6::R6Class(
       if (isTRUE(auto_stats)) private$calculate_cum_stats()
       invisible(self)
     },
-    save_csv = function(filename = NA, context_to_columns = FALSE) {
+    save_csv = function(filename = NA) {
       if (is.na(filename)) {
         filename <- paste("contextual_data_",
                           format(Sys.time(), "%y%m%d_%H%M%S"),
@@ -210,43 +214,25 @@ History <- R6::R6Class(
                           sep = ""
         )
       }
-      if (context_to_columns) {
-        context_cols <- c(paste0("X.", seq_along(unlist(private$.data[1,]$context))))
-        dt_to_save <- data.table::copy(private$.data)
-        dt_to_save[, context_string := lapply(.SD, function(x) paste( unlist(x), collapse=',') ),
-                                    by=1:private$.data[, .N], .SDcols = c("context")]
-        one_context <- private$.data[1,]$context[[1]]
-        if (is.vector(one_context)) one_context <- matrix(one_context, nrow = 1L)
-        dt_to_save$k <- ncol(one_context)
-        dt_to_save$d <- nrow(one_context)
-        dt_to_save[, (context_cols) := data.table::tstrsplit(context_string, ",", fixed=TRUE)]
-        dt_to_save$context <- NULL
-        if ("theta" %in% names(dt_to_save)) dt_to_save$theta <- NULL
-        dt_to_save$context_string <- NULL
-        fwrite(dt_to_save[,which(dt_to_save[,colSums(is.na(dt_to_save))<nrow(dt_to_save)]), with = FALSE],
-               file = filename)
-        rm(dt_to_save)
-        gc()
-      } else {
-        if ("theta" %in% names(private$.data)) {
-          fwrite(private$.data[,which(private$.data[,colSums(is.na(private$.data))<nrow(private$.data)]),
+      if ("theta" %in% names(private$.data)) {
+        fwrite(private$.data[,which(private$.data[,colSums(is.na(private$.data))<nrow(private$.data)]),
                              with =FALSE][, !"theta", with=FALSE], file = filename)
-        } else {
-          fwrite(private$.data[,which(private$.data[,colSums(is.na(private$.data))<nrow(private$.data)]),
-                               with =FALSE], file = filename)
-        }
+      } else {
+        fwrite(private$.data[,which(private$.data[,colSums(is.na(private$.data))<nrow(private$.data)]),
+                             with =FALSE], file = filename)
       }
       invisible(self)
     },
-    get_data_frame = function(context_to_columns = FALSE) {
-        as.data.frame(private$.data)
+    get_data_frame = function() {
+      as.data.frame(private$.data)
     },
     set_data_frame = function(df, auto_stats = TRUE) {
       private$.data <- data.table::as.data.table(df)
       if (isTRUE(auto_stats)) private$calculate_cum_stats()
       invisible(self)
     },
-    get_data_table = function(limit_agents = NULL, limit_cols = NULL, limit_context = NULL, interval = 1, no_zero_sim = FALSE) {
+    get_data_table = function(limit_agents = NULL, limit_cols = NULL, limit_context = NULL,
+                              interval = 1, no_zero_sim = FALSE) {
       if (is.null(limit_agents)) {
         if (is.null(limit_cols)) {
           private$.data[t %% interval == 0 | t == 1][sim != 0]
@@ -270,37 +256,18 @@ History <- R6::R6Class(
       private$.data <- private$.data[0, ]
       invisible(self)
     },
-    delete_empty_rows = function() {
-      private$.data <- private$.data[sim > 0 & t > 0]
-      private$.data <- private$.data[, t := seq_len(.N), by = c("agent", "sim")]
-      # private$.data[ , max(t), by = c("agent","sim")][,min(V1), by = c("agent")][,V1]
-      invisible(self)
+    truncate = function() {
+      min_t_sim <- min(private$.data[,max(t), by = c("agent","sim")]$V1)
+      private$.data <- private$.data[t<=min_t_sim]
     },
-    reindex = function(truncate = TRUE) {
-      private$.data <- private$.data[, t := seq_len(.N), by = c("agent", "sim")]
-      if (truncate) {
-        min_t_anywhere <- min(private$.data[, .(count = data.table::uniqueN(t)), by = c("agent", "sim")]$count)
-        private$.data <- private$.data[t <= min_t_anywhere]
+    extract_theta = function(limit_agents, parameter, arm, tail = NULL, sims = 1){
+      if(!is.null(tail)){
+        unlist(sapply(sapply(tail(private$.data[agent %in% limit_agents & sim %in% sims],tail)$theta,
+                             `[`, parameter), `[[`, arm), FALSE, FALSE)
+      } else {
+        unlist(sapply(sapply(private$.data[agent %in% limit_agents & sim %in% sims]$theta,
+                             `[`, parameter), `[[`, arm), FALSE, FALSE)
       }
-      invisible(self)
-    },
-    context_to_columns = function(delete_original_column = FALSE) {
-      # create d and k columns
-      one_context <- private$.data[1,]$context[[1]]
-      if (is.vector(one_context)) one_context <- matrix(one_context, nrow = 1L)
-      private$.data$k <- ncol(one_context)
-      private$.data$d <- nrow(one_context)
-      # create context columns
-      context_cols <- c(paste0("X.", seq_along(unlist(private$.data[1,]$context))))
-      # create temporary context_string column
-      private$.data[, context_string := lapply(.SD, function(x) paste( unlist(x), collapse=',') ),
-                    by=1:private$.data[, .N], .SDcols = c("context")]
-      # extract context data to context columns
-      private$.data[, (context_cols) := data.table::tstrsplit(context_string, ",", fixed=TRUE)]
-      # delete temporary context_string column
-      private$.data$context_string <- NULL
-      # if not temporary, delete original context column
-      if (isTRUE(delete_original_column)) private$.data$context <- NULL
     },
     finalize = function() {
       self$clear_data_table()
@@ -310,7 +277,6 @@ History <- R6::R6Class(
     .data            = NULL,
     .meta            = NULL,
     .cum_stats       = NULL,
-
     initialize_data_tables = function(context_cols = NULL) {
       private$.data <- data.table::data.table(
         t = rep(0L, self$n),
@@ -319,14 +285,17 @@ History <- R6::R6Class(
         sim = rep(0L, self$n),
         choice = rep(0.0, self$n),
         reward = rep(0.0, self$n),
-        choice_is_optimal = rep(0L, self$n),
         optimal_arm = rep(0L, self$n),
         optimal_reward = rep(0.0, self$n),
         propensity = rep(0.0, self$n),
-        agent = rep("", self$n)
+        agent = rep("", self$n),
+        regret = rep(0.0, self$n),
+        cum_reward = rep(0.0, self$n),
+        cum_regret = rep(0.0, self$n),
+        stringsAsFactors = TRUE
       )
       if (isTRUE(self$save_context)) {
-        if (isTRUE(self$context_multiple_columns && !is.null(context_cols))) {
+        if (!is.null(context_cols)) {
           context_cols <- c(paste0("X.", seq_along(1:context_cols)))
           private$.data[, (context_cols) := 0.0]
         } else {
@@ -345,22 +314,14 @@ History <- R6::R6Class(
     calculate_cum_stats = function() {
 
 
-      self$set_meta_data("min_t",min(private$.data[, .(count = data.table::uniqueN(t)), by = c("agent", "sim")]$count))
-      self$set_meta_data("max_t",max(private$.data[, .(count = data.table::uniqueN(t)), by = c("agent", "sim")]$count))
+      self$set_meta_data("min_t",min(private$.data[,max(t), by = c("agent","sim")]$V1))
+      self$set_meta_data("max_t",max(private$.data[,max(t), by = c("agent","sim")]$V1))
 
       self$set_meta_data("agents",min(private$.data[, .(count = data.table::uniqueN(agent))]$count))
       self$set_meta_data("simulations",min(private$.data[, .(count = data.table::uniqueN(sim))]$count))
 
-      if ("optimal_reward" %in% colnames(private$.data))
-        private$.data[, regret:= optimal_reward - reward]
-      else
+      if (!"optimal_reward" %in% colnames(private$.data))
         private$.data[, optimal_reward:= NA]
-
-      private$.data[, cum_reward:= cumsum(reward), by = list(agent, sim)]
-      private$.data[, cum_reward_rate := cum_reward / t]
-
-      private$.data[, cum_regret := cumsum(regret), by = list(agent, sim)]
-      private$.data[, cum_regret_rate := cum_regret / t]
 
       data.table::setkeyv(private$.data,c("t","agent"))
 
@@ -373,6 +334,10 @@ History <- R6::R6Class(
         reward_var          = var(reward),
         reward_sd           = sd(reward),
         reward              = mean(reward),
+
+        optimal_var         = var(as.numeric(optimal_arm == choice)),
+        optimal_sd          = sd(as.numeric(optimal_arm == choice)),
+        optimal             = mean(as.numeric(optimal_arm == choice)),
 
         cum_regret_var      = var(cum_regret),
         cum_regret_sd       = sd(cum_regret),
@@ -401,10 +366,14 @@ History <- R6::R6Class(
       private$.cum_stats[, regret_ci          := regret_sd / sqrt_sim * qn]
       private$.cum_stats[, reward_ci          := reward_sd / sqrt_sim * qn]
 
+      private$.data[, cum_reward_rate := cum_reward / t]
+      private$.data[, cum_regret_rate := cum_regret / t]
+
       # move agent column to front
       data.table::setcolorder(private$.cum_stats, c("agent", setdiff(names(private$.cum_stats), "agent")))
 
     },
+
     data_table_to_named_nested_list = function(dt, transpose = FALSE) {
       df_m <- as.data.frame(dt)
       rownames(df_m) <- df_m[, 1]
@@ -448,7 +417,8 @@ History <- R6::R6Class(
 #' and can save or load simulation log data files.
 #'
 #' @name History
-#' @aliases print_data reindex delete_empty_rows clear_data_table set_data_table get_data_table set_data_frame get_data_frame load cumulative save
+#' @aliases print_data clear_data_table set_data_table get_data_table
+#' set_data_frame get_data_frame load cumulative save
 #'
 #' @section Usage:
 #' \preformatted{
@@ -500,35 +470,61 @@ History <- R6::R6Class(
 #'   \item{\code{get_data_frame()}}{
 #'      Returns the \code{History} log as a \code{data.frame}.
 #'   }
+#'   \item{\code{set_data_frame(df, auto_stats = TRUE)}}{
+#'      Sets the \code{History} log with the data in \code{data.frame} \code{dt}.
+#'      Recalculates cumulative statistics when auto_stats is TRUE.
+#'   }
 #'   \item{\code{get_data_table()}}{
 #'      Returns the \code{History} log as a \code{data.table}.
 #'   }
-#'   \item{\code{set_data_table(dt)}}{
+#'   \item{\code{set_data_table(dt, auto_stats = TRUE)}}{
 #'      Sets the \code{History} log with the data in \code{data.table} \code{dt}.
+#'      Recalculates cumulative statistics when auto_stats is TRUE.
 #'   }
 #'   \item{\code{clear_data_table()}}{
-#'      Clears the \code{History} log.
+#'      Clear \code{History}'s internal \code{data.table} log.
 #'   }
-#'   \item{\code{save_csv(filename = NA, context_to_columns = FALSE)}}{
-#'      Saves History data to csv file. When context_to_columns is TRUE, the "context" column will
-#'      be split over multiple columns X1 to X...
+#'   \item{\code{save_csv(filename = NA)}}{
+#'      Saves History data to csv file.
 #'   }
-#'   \item{\code{delete_empty_rows()}}{
-#'      Deletes all empty rows in the \code{History} log and re-indexes the \code{t} column grouped
-#'      by agent and simulation.
-#'   }
-#'   \item{\code{reindex(truncate = TRUE)}}{
-#'      Removes empty rows from the \code{History} log, reindexes the \code{t} column, and,
-#'      if \code{truncate} is \code{TRUE}, truncates the resulting data to the shortest simulation
-#'      grouped by agent and simulation.
-#'   }
-#'   \item{\code{reindex(truncate = TRUE)}}{
-#'      Removes empty rows from the \code{History} log, reindexes the \code{t} column, and,
-#'      if \code{truncate} is \code{TRUE}, truncates the resulting data to the shortest simulation
-#'      grouped by agent and simulation.
+#'   \item{\code{extract_theta(limit_agents, parameter, arm, tail = NULL)}}{
+#'      Extract theta parameter from theta list for \code{limit_agents},
+#'      where \code{parameter} sets the to be retrieved parameter or vector of parameters in theta,
+#'      \code{arm} is the relevant integer index of the arm or vector of arms of interest, and the
+#'      optional \code{tail} selects the last elements in the list.
+#'      Returns a vector, matrix or array with the selected theta values.
 #'   }
 #'   \item{\code{print_data()}}{
 #'      Prints a summary of the \code{History} log.
+#'   }
+#'   \item{\code{update_statistics()}}{
+#'      Updates cumulative statistics.
+#'   }
+#'   \item{\code{get_agent_list()}}{
+#'      Retrieve list of agents in History.
+#'   }
+#'   \item{\code{get_agent_count()}}{
+#'      Retrieve number of agents in History.
+#'   }
+#'   \item{\code{get_simulation_count()}}{
+#'      Retrieve number of simulations in History.
+#'   }
+#'   \item{\code{get_arm_choice_percentage(limit_agents)}}{
+#'      Retrieve list of percentage arms chosen per agent for \code{limit_agents}.
+#'   }
+#'   \item{\code{get_meta_data()}}{
+#'      Retrieve History meta data.
+#'   }
+#'   \item{\code{set_meta_data = function(key, value, group = "sim", agent_name = NULL)}}{
+#'      Set History meta data.
+#'   }
+#'   \item{\code{get_cumulative_data = function(limit_agents = NULL, limit_cols = NULL, interval = 1,
+#'   cum_average = FALSE))}}{
+#'      Retrieve cumulative statistics data.
+#'   }
+#'   \item{\code{get_cumulative_result = function(limit_agents = NULL, limit_cols = NULL, interval = 1,
+#'   cum_average = FALSE))}}{
+#'      Retrieve cumulative statistics data point.
 #'   }
 #'   \item{\code{data}}{
 #'      Active binding, read access to History's internal data.table.
@@ -546,9 +542,10 @@ History <- R6::R6Class(
 #' Core contextual classes: \code{\link{Bandit}}, \code{\link{Policy}}, \code{\link{Simulator}},
 #' \code{\link{Agent}}, \code{\link{History}}, \code{\link{Plot}}
 #'
-#' Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},  \code{\link{OfflineReplayEvaluatorBandit}}
+#' Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},
+#' \code{\link{OfflineReplayEvaluatorBandit}}
 #'
-#' Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualThompsonSamplingPolicy}}
+#' Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualLinTSPolicy}}
 #'
 #' @examples
 #' \dontrun{

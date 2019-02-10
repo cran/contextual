@@ -25,7 +25,7 @@ test_that("Agent", {
                                       log_interval = 1,
                                       progress_file = TRUE)$run()
 
-  expect_identical(history$cumulative$testme$reward,0.3)
+  expect_identical(history$cumulative$testme$reward,0.4)
 
   t                  <- agent$get_t()
   agent$set_t(t+1)
@@ -35,8 +35,10 @@ test_that("Agent", {
 
   Sys.sleep(0.1)
   expect_true(file.exists("parallel.log"))
-  expect_true(file.exists("progress.log"))
-  if (file.exists("parallel.log")) file.remove("parallel.log")
+  expect_true(file.exists("workers_progress.log"))
+  expect_true(file.exists("agents_progress.log"))
+  if (file.exists("workers_progress.log")) file.remove("workers_progress.log")
+  if (file.exists("agents_progress.log")) file.remove("agents_progress.log")
   if (file.exists("progress.log")) file.remove("progress.log")
 
 })

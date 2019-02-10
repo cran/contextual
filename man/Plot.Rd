@@ -90,6 +90,10 @@ the plot frame at the given location.
 \item{\code{ylim}}{
 \code{(c(integer,integer), NULL)} Sets y-axis limits.
 }
+\item{\code{log}}{
+\code{(character , "")} A character string which contains "x" if the x axis is to be logarithmic,
+"y" if the y axis is to be logarithmic and "xy" or "yx" if both axes are to be logarithmic.
+}
 \item{\code{use_colors}}{
 \code{(logical, TRUE)} If use_colors is FALSE, plots will be in grayscale.
 Otherwise, plots will make use of a color palette (default).
@@ -115,6 +119,10 @@ the variance, standard deviation, or 95% confidence interval will be added to th
 }
 \item{\code{interval}}{
 \code{(integer, NULL)} Plot only every t%%interval==0 data point.
+}
+\item{\code{cum_average}}{
+\code{(logical , FALSE)} Calculates moving average from cum_reward or cum_regret with step
+size \code{interval}.
 }
 \item{\code{color_step}}{
 \code{(integer, 1)} When > 1, the plot cycles through \code{nr_agents/color_step} colors.
@@ -172,7 +180,8 @@ plot(history, limit_agents = c("ThompsonSampling"), type = "arms",
 Core contextual classes: \code{\link{Bandit}}, \code{\link{Policy}}, \code{\link{Simulator}},
 \code{\link{Agent}}, \code{\link{History}}, \code{\link{Plot}}
 
-Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},  \code{\link{OfflineReplayEvaluatorBandit}}
+Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},
+\code{\link{OfflineReplayEvaluatorBandit}}
 
-Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualThompsonSamplingPolicy}}
+Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualLinTSPolicy}}
 }

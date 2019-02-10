@@ -3,7 +3,7 @@
 #' @importFrom itertools isplitVector
 #' @importFrom data.table rbindlist
 #' @importFrom iterators icount
-#'
+#' @import Formula
 #' @export
 Simulator <- R6::R6Class(
   "Simulator",
@@ -24,35 +24,32 @@ Simulator <- R6::R6Class(
     set_seed = NULL,
     progress_file = NULL,
     log_interval = NULL,
+    save_interval = NULL,
     include_packages = NULL,
     outfile = NULL,
     chunk_multiplier = NULL,
     cl = NULL,
-    reindex = NULL,
-    context_multiple_columns = NULL,
     initialize = function(agents,
                           horizon = 100L,
                           simulations = 100L,
                           save_context = FALSE,
                           save_theta = FALSE,
-                          context_multiple_columns = FALSE,
                           do_parallel = TRUE,
                           worker_max = NULL,
                           set_seed = 0,
+                          save_interval = 1,
                           progress_file = FALSE,
                           log_interval = 1000,
                           include_packages = NULL,
                           t_over_sims = FALSE,
-                          chunk_multiplier = 1,
-                          reindex = FALSE) {
+                          chunk_multiplier = 1) {
 
       if (!is.list(agents)) agents <- list(agents)
 
-      self$reindex <- reindex
       self$progress_file <- progress_file
-      self$log_interval <- log_interval
-      self$horizon <- horizon
-      self$simulations <- simulations
+      self$log_interval <- as.integer(log_interval)
+      self$horizon <- as.integer(horizon)
+      self$simulations <- as.integer(simulations)
       self$save_theta <- save_theta
       self$save_context <- save_context
       self$agents <- agents
@@ -61,9 +58,9 @@ Simulator <- R6::R6Class(
       self$do_parallel <- do_parallel
       self$t_over_sims <- t_over_sims
       self$set_seed <- set_seed
+      self$save_interval <- as.integer(save_interval)
       self$include_packages <- include_packages
-      self$chunk_multiplier <- chunk_multiplier
-      self$context_multiple_columns <- context_multiple_columns
+      self$chunk_multiplier <- as.integer(chunk_multiplier)
 
       self$reset()
     },
@@ -73,13 +70,14 @@ Simulator <- R6::R6Class(
 
       # create or clear log files
       if (self$progress_file) {
-        cat(paste0(""), file = "progress.log", append = FALSE)
+        cat(paste0(""), file = "workers_progress.log", append = FALSE)
+        cat(paste0(""), file = "agents_progress.log", append = FALSE)
         cat(paste0(""), file = "parallel.log", append = FALSE)
         self$outfile <- "parallel.log"
       }
 
       # (re)create history data and meta data tables
-      self$internal_history <- History$new(self$horizon * self$agent_count * self$simulations)
+      self$internal_history <- History$new()
       self$internal_history$set_meta_data("horizon",self$horizon)
       self$internal_history$set_meta_data("agents",self$agent_count)
       self$internal_history$set_meta_data("simulations",self$simulations)
@@ -96,6 +94,11 @@ Simulator <- R6::R6Class(
           self$agents[[agent_index]]$name <-
             paste0(current_agent_name,'.',current_agent_name_occurrences)
         }
+        agent_name <-  self$agents[[agent_index]]$name
+        bandit_name <- self$agents[[agent_index]]$bandit$class_name
+        policy_name <- self$agents[[agent_index]]$policy$class_name
+        self$internal_history$set_meta_data("bandit", bandit_name , group = "sim", agent_name = agent_name)
+        self$internal_history$set_meta_data("policy", policy_name , group = "sim", agent_name = agent_name)
       }
     },
     run = function() {
@@ -128,10 +131,9 @@ Simulator <- R6::R6Class(
       horizon                  <- self$horizon
       agent_count              <- self$agent_count
       save_context             <- self$save_context
-      context_multiple_columns <- self$context_multiple_columns
       save_theta               <- self$save_theta
-      reindex                  <- self$reindex
       progress_file            <- self$progress_file
+      save_interval            <- self$save_interval
       log_interval             <- self$log_interval
       t_over_sims              <- self$t_over_sims
       set_seed                 <- self$set_seed
@@ -161,16 +163,26 @@ Simulator <- R6::R6Class(
         sims_agent_list = sa_iterator,
         i = iterators::icount(),
         .inorder = TRUE,
-        .export = c("History"),
+        .export = c("History","Formula"),
         .noexport = c("sims_and_agents_list","internal_history","sa_iterator"),
         .packages = par_packages
       ) %fun% {
         index <- 1L
         sim_agent_counter <- 0
         sim_agent_total <- length(sims_agent_list)
-        local_history <- History$new( horizon * sim_agent_total,
+
+        # TODO: Can be done smarter and cleaner?
+        multiplier <- 1
+        for (sim_agent_index in sims_agent_list) {
+          sim_agent <- agents[[sim_agent_index$agent_index]]
+          if(isTRUE(sim_agent$bandit$arm_multiply))
+            if(multiplier < sim_agent$bandit$k)
+              multiplier <- sim_agent$bandit$k
+        }
+        allocate_space <- floor((horizon * sim_agent_total * multiplier) / save_interval) + sim_agent_total
+
+        local_history <- History$new( allocate_space,
                                       save_context,
-                                      context_multiple_columns,
                                       save_theta)
 
         for (sim_agent_index in sims_agent_list) {
@@ -187,22 +199,27 @@ Simulator <- R6::R6Class(
                        " worker ", i,
                        " at sim ", sim_agent_counter,
                        " of ", sim_agent_total,"\n"),
-                file = "progress.log", append = TRUE)
+                file = "workers_progress.log", append = TRUE)
           }
           simulation_index <- sim_agent$sim_index
           agent_name <- sim_agent$name
-          local_curent_seed <- simulation_index + set_seed*42
+          local_curent_seed <- simulation_index + set_seed * 42
           set.seed(local_curent_seed)
           sim_agent$bandit$post_initialization()
-          sim_agent$bandit$generate_bandit_data(n = horizon)
-          if (t_over_sims) sim_agent$set_t(as.integer((simulation_index - 1L) * horizon))
+          if(isTRUE(sim_agent$bandit$arm_multiply))
+            horizon_loop <- horizon * sim_agent$bandit$k
+          else
+            horizon_loop <- horizon
+          set.seed(local_curent_seed + 1e+06)
+          sim_agent$bandit$generate_bandit_data(n = horizon_loop)
+          if (isTRUE(t_over_sims)) sim_agent$set_t(as.integer((simulation_index - 1L) * horizon_loop))
           step <- list()
-          for (t in 1L:horizon) {
+          for (t in 1L:horizon_loop) {
             step <- sim_agent$do_step()
-            if (!is.null(step[[3]])) {
+            if (!is.null(step[[3]]) && ((step[[5]] == 1) || (step[[5]] %% save_interval == 0))) {
               local_history$insert(
                 index,                                         #index
-                t,                                             #t
+                step[[5]],                                     #policy_t
                 step[[1]][["k"]],                              #k
                 step[[1]][["d"]],                              #d
                 step[[2]],                                     #action
@@ -217,31 +234,39 @@ Simulator <- R6::R6Class(
           }
         }
         sim_agent$bandit$final()
-        local_history$get_data_table()
+        local_history$data[t!=0]
       }
+
       # bind all results
       foreach_results <- data.table::rbindlist(foreach_results)
-      self$internal_history$set_data_table(foreach_results, auto_stats = FALSE)
+      foreach_results[, agent := factor(agent)]
+      self$internal_history$set_data_table(foreach_results[sim > 0 & t > 0], auto_stats = FALSE)
       rm(foreach_results)
-
       private$end_time <- Sys.time()
-      if (reindex) self$internal_history$reindex()
+      gc()
+      message("Finished main loop.")
 
-      # update statistics
-      self$internal_history$update_statistics()
-
-      # set meta data and messages
       self$internal_history$set_meta_data("sim_end_time",format(Sys.time(), "%a %b %d %X %Y"))
       formatted_duration <- contextual::formatted_difftime(private$end_time - private$start_time)
       self$internal_history$set_meta_data("sim_total_duration", formatted_duration)
       message(paste0("Completed simulation in ",formatted_duration))
+
+      # TODO: this should be optional, and maybe done at plotside?
+      self$internal_history$truncate()
+
+      start_time_stats <- Sys.time()
+      message("Computing statistics.")
+      # update statistics TODO: not always necessary, add option arg to class?
+      self$internal_history$update_statistics()
+
+      # set meta data and messages
       self$stop_parallel_backend()
       self$internal_history
     },
     register_parallel_backend = function() {
       # nocov start
       # setup parallel backend
-      message("Setting up parallel backend")
+      message("Setting up parallel backend.")
       nr_cores <- parallel::detectCores()
       if (nr_cores >= 3) self$workers <- nr_cores - 1
       if (!is.null(self$worker_max)) {
@@ -328,8 +353,7 @@ Simulator <- R6::R6Class(
 #'                            t_over_sims = FALSE,
 #'                            set_seed = 0,
 #'                            progress_file = FALSE,
-#'                            include_packages = NULL,
-#'                            reindex = FALSE)
+#'                            include_packages = NULL)
 #' }
 #'
 #' @section Arguments:
@@ -345,6 +369,9 @@ Simulator <- R6::R6Class(
 #'     \code{integer}. How many times to repeat each agent's simulation over \emph{t} = \{1, \ldots, T\},
 #'     with a new seed on each repeat (itself deterministically derived from set\_seed).
 #'   }
+#'   \item{\code{save_interval}}{
+#'     \code{integer}. Save only every \code{save_interval} time steps.
+#'   }
 #'   \item{\code{save_context}}{
 #'     \code{logical}. Save the context matrices \code{X} to the History log during a simulation?
 #'   }
@@ -357,7 +384,6 @@ Simulator <- R6::R6Class(
 #'   \item{\code{worker_max}}{
 #'      \code{integer}. Specifies how many parallel workers are to be used.
 #'      If unspecified, the amount of workers defaults to \code{max(workers_available)-1}.
-#'
 #'   }
 #'   \item{\code{t_over_sims}}{
 #'      \code{logical}. Of use to, among others, offline Bandits.
@@ -370,19 +396,18 @@ Simulator <- R6::R6Class(
 #'      \code{integer}. Sets the seed of R's random number generator for the current \code{Simulator}.
 #'   }
 #'   \item{\code{progress_file}}{
-#'       \code{logical}. If \code{TRUE}, \code{Simulator} writes \code{progress.log} and \code{parallel.log}
-#'       files to the current working directory, allowing you to keep track of \code{workers}, iterations,
-#'       and potential errors when running a \code{Simulator} in parallel.
+#'       \code{logical}. If \code{TRUE}, \code{Simulator} writes \code{workers_progress.log},
+#'       \code{agents_progress.log} and \code{parallel.log} files to the current working directory,
+#'       allowing you to keep track of respectively \code{workers}, \code{agents},
+#'       and potential errors when running a \code{Simulator} in parallel mode.
+#'   }
+#'   \item{\code{log_interval}}{
+#'       \code{integer}. Sets the log write interval.
 #'   }
 #'   \item{\code{include_packages}}{
 #'       \code{List}. List of packages that (one of) the policies depend on. If a \code{Policy} requires an
 #'       R package to be loaded, this option can be used to load that package on each of the workers.
 #'       Ignored if \code{do_parallel} is \code{FALSE}.
-#'   }
-#'   \item{\code{reindex}}{
-#'      \code{logical}. If \code{TRUE}, removes empty rows from the \code{History} log,
-#'      reindexes the \code{t} column, and truncates the resulting data to the shortest simulation
-#'      grouped by agent and simulation.
 #'   }
 #'   \item{\code{chunk_multiplier}}{
 #'      \code{integer} By default, simulations are equally divided over available workers, and every
@@ -417,7 +442,7 @@ Simulator <- R6::R6Class(
 #'
 #' Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},  \code{\link{OfflineReplayEvaluatorBandit}}
 #'
-#' Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualThompsonSamplingPolicy}}
+#' Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualLinTSPolicy}}
 #'
 #' @examples
 #' \dontrun{

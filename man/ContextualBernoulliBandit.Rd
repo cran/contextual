@@ -4,7 +4,7 @@
 \alias{ContextualBernoulliBandit}
 \title{Bandit: Naive Contextual Bernouilli Bandit}
 \description{
-Contextual Bernoulli multi-armed bandit with one context feature active per t.
+Contextual Bernoulli multi-armed bandit where at least one context feature is active at a time.
 }
 \section{Usage}{
 
@@ -78,7 +78,8 @@ plot(history, type = "cumulative", regret = TRUE)
 Core contextual classes: \code{\link{Bandit}}, \code{\link{Policy}}, \code{\link{Simulator}},
 \code{\link{Agent}}, \code{\link{History}}, \code{\link{Plot}}
 
-Bandit subclass examples: \code{\link{ContextualBernoulliBandit}}, \code{\link{ContextualLogitBandit}},  \code{\link{OfflineReplayEvaluatorBandit}}
+Bandit subclass examples: \code{\link{ContextualBernoulliBandit}}, \code{\link{ContextualLogitBandit}},
+\code{\link{OfflineReplayEvaluatorBandit}}
 
-Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualThompsonSamplingPolicy}}
+Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualLinTSPolicy}}
 }

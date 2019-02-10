@@ -32,8 +32,7 @@ ContextualPrecachingBandit <- R6::R6Class(
   private = list(
     R = NULL,
     X = NULL,
-    context_list = list(),
-    reward_list = list(),
+    W = NULL,
     generate_contexts = function(n = 1L) {
       private$X <- array(sample(c(0, 1), replace = TRUE, size = self$d * n), dim = c(self$d, self$k, n))
     },
@@ -43,6 +42,7 @@ ContextualPrecachingBandit <- R6::R6Class(
       rewards                      <- colSums(private$X*weight_array)
       rewards                      <- rewards / colSums(private$X)
       rewards[is.nan(rewards)]     <- 0
+      private$W <- rewards
       private$R <- round((runif( self$k * n) + rewards) / 2)
     }
   )
@@ -51,6 +51,8 @@ ContextualPrecachingBandit <- R6::R6Class(
 #' Bandit: ContextualPrecachingBandit
 #'
 #' Illustrates precaching of contexts and rewards.
+#'
+#' TODO: Fix "attempt to select more than one element in integerOneIndex"
 #'
 #' Contextual extension of \code{\link{BasicBernoulliBandit}}.
 #'
@@ -120,9 +122,10 @@ ContextualPrecachingBandit <- R6::R6Class(
 #' Core contextual classes: \code{\link{Bandit}}, \code{\link{Policy}}, \code{\link{Simulator}},
 #' \code{\link{Agent}}, \code{\link{History}}, \code{\link{Plot}}
 #'
-#' Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},  \code{\link{OfflineReplayEvaluatorBandit}}
+#' Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},
+#' \code{\link{OfflineReplayEvaluatorBandit}}
 #'
-#' Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualThompsonSamplingPolicy}}
+#' Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualLinTSPolicy}}
 #'
 #' @examples
 #' \dontrun{

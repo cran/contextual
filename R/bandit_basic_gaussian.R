@@ -5,10 +5,12 @@ BasicGaussianBandit <- R6::R6Class(
   public = list(
     mu_per_arm = NULL,
     sigma_per_arm = NULL,
+    mu_offset = NULL,
     class_name = "BasicGaussianBandit",
-    initialize = function(mu_per_arm, sigma_per_arm) {
+    initialize = function(mu_per_arm, sigma_per_arm, mu_offset = 0) {
       self$mu_per_arm      <- mu_per_arm
       self$sigma_per_arm   <- sigma_per_arm
+      self$mu_offset       <- mu_offset
       self$k               <- length(self$mu_per_arm)
     },
     get_context = function(t) {
@@ -17,8 +19,8 @@ BasicGaussianBandit <- R6::R6Class(
       )
     },
     get_reward = function(t, context, action) {
-      rewards <- rnorm(self$k, self$mu_per_arm, self$sigma_per_arm)
-      optimal_arm    <- which_max_tied(rewards)
+      rewards <- rnorm(self$k, self$mu_per_arm, self$sigma_per_arm) + self$mu_offset
+      optimal_arm    <- which_max_tied(self$mu_per_arm)
       reward         <- list(
         reward                   = rewards[action$choice],
         optimal_arm              = optimal_arm,
@@ -91,9 +93,10 @@ BasicGaussianBandit <- R6::R6Class(
 #' Core contextual classes: \code{\link{Bandit}}, \code{\link{Policy}}, \code{\link{Simulator}},
 #' \code{\link{Agent}}, \code{\link{History}}, \code{\link{Plot}}
 #'
-#' Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},  \code{\link{OfflineReplayEvaluatorBandit}}
+#' Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},
+#' \code{\link{OfflineReplayEvaluatorBandit}}
 #'
-#' Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualThompsonSamplingPolicy}}
+#' Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualLinTSPolicy}}
 #'
 #' @examples
 #' \dontrun{

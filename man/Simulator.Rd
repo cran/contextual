@@ -36,8 +36,7 @@ simulator <- Simulator$new(agents,
                            t_over_sims = FALSE,
                            set_seed = 0,
                            progress_file = FALSE,
-                           include_packages = NULL,
-                           reindex = FALSE)
+                           include_packages = NULL)
 }
 }
 
@@ -55,6 +54,9 @@ An \code{Agent} instance or a \code{list} of \code{Agent} instances.
 \code{integer}. How many times to repeat each agent's simulation over \emph{t} = {1, \ldots, T},
 with a new seed on each repeat (itself deterministically derived from set\_seed).
 }
+\item{\code{save_interval}}{
+\code{integer}. Save only every \code{save_interval} time steps.
+}
 \item{\code{save_context}}{
 \code{logical}. Save the context matrices \code{X} to the History log during a simulation?
 }
@@ -67,7 +69,6 @@ with a new seed on each repeat (itself deterministically derived from set\_seed)
 \item{\code{worker_max}}{
 \code{integer}. Specifies how many parallel workers are to be used.
 If unspecified, the amount of workers defaults to \code{max(workers_available)-1}.
-
 }
 \item{\code{t_over_sims}}{
 \code{logical}. Of use to, among others, offline Bandits.
@@ -80,19 +81,18 @@ and a different subset of the data for each repeat of an agent's simulation.
 \code{integer}. Sets the seed of R's random number generator for the current \code{Simulator}.
 }
 \item{\code{progress_file}}{
-\code{logical}. If \code{TRUE}, \code{Simulator} writes \code{progress.log} and \code{parallel.log}
-files to the current working directory, allowing you to keep track of \code{workers}, iterations,
-and potential errors when running a \code{Simulator} in parallel.
+\code{logical}. If \code{TRUE}, \code{Simulator} writes \code{workers_progress.log},
+\code{agents_progress.log} and \code{parallel.log} files to the current working directory,
+allowing you to keep track of respectively \code{workers}, \code{agents},
+and potential errors when running a \code{Simulator} in parallel mode.
+}
+\item{\code{log_interval}}{
+\code{integer}. Sets the log write interval.
 }
 \item{\code{include_packages}}{
 \code{List}. List of packages that (one of) the policies depend on. If a \code{Policy} requires an
 R package to be loaded, this option can be used to load that package on each of the workers.
 Ignored if \code{do_parallel} is \code{FALSE}.
-}
-\item{\code{reindex}}{
-\code{logical}. If \code{TRUE}, removes empty rows from the \code{History} log,
-reindexes the \code{t} column, and truncates the resulting data to the shortest simulation
-grouped by agent and simulation.
 }
 \item{\code{chunk_multiplier}}{
 \code{integer} By default, simulations are equally divided over available workers, and every
@@ -156,5 +156,5 @@ Core contextual classes: \code{\link{Bandit}}, \code{\link{Policy}}, \code{\link
 
 Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},  \code{\link{OfflineReplayEvaluatorBandit}}
 
-Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualThompsonSamplingPolicy}}
+Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualLinTSPolicy}}
 }

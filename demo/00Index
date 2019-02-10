@@ -1,9 +1,15 @@
 demo_subsubclass                                  Further subclassing of existing policies and bandits.
 demo_sine_bandit                                  Bandit reward function fluctuating over time.
-demo_offline_cmab_alpha_linucb                    Bandit offline bandit and parameter evaluation.
-demo_mab_policy_comparison                        Comparison of some contextual-free bandits
+demo_offline_cmab_alpha_linucb_direct_method      Offline bandit and parameter evaluation - direct method.
+demo_offline_cmab_alpha_linucb_replay             Offline bandit and parameter evaluation - replay.
+demo_offline_direct_method                        Offline bandit - direct method.
+demo_offline_propensity_score                     Offline bandit - propensity score weighting.
+demo_offline_doubly_robust                        Offline bandit - doubly robust.
+demo_mab_policy_comparison                        Comparison of some contextual-free bandits.
 demo_epsilon_greedy_policy                        Basic simulation of a context-free policy.
 demo_continuum_bandit                             Use of continuum bandit and LiF policy.
 demo_cmab_policy_comparison_linear_bandit         Comparison of a contextual policies with linear bandit.
 demo_cmab_policy_comparison_weight_bandit         Comparison of a contextual policies with weight bandit.
 demo_simpsons_paradox_propensity                  Simpson's Paradox to demonstrate propensity weighting.
+demo_sutton_barto                                 Contextual code reproducing Sutton & Barto (2018) plots.
+demo_bandit_algorithms_for_website_optimization   Contextual code reproducing John Myles White (2012) plots.

@@ -45,7 +45,7 @@ test_that("ContextualLogitBandit intercept TRUE", {
 
   LinUCBGeneralPolicy
 
-  policy        <- ContextualThompsonSamplingPolicy$new(delta=0.5, R=0.01, epsilon=0.5)
+  policy        <- ContextualLinTSPolicy$new(0.1)
   expect_identical(typeof(policy), "environment")
 
   agent         <- Agent$new(policy, bandit)
@@ -54,7 +54,7 @@ test_that("ContextualLogitBandit intercept TRUE", {
   simulation    <- Simulator$new(agent, horizon, simulations, do_parallel = FALSE)
   history       <- simulation$run()
 
-  expect_equal(history$cumulative$ContextualThompsonSampling$cum_regret,3.6,tolerance = 0.00001)
+  expect_equal(history$cumulative$ContextualLinTS$cum_regret,2,tolerance = 0.00001)
 
 
   ###############
@@ -70,7 +70,7 @@ test_that("ContextualLogitBandit intercept TRUE", {
   simulation    <- Simulator$new(agent, horizon, simulations, do_parallel = FALSE)
   history       <- simulation$run()
 
-  expect_equal(history$cumulative$LinUCBGeneral$cum_regret,3.8,tolerance = 0.00001)
+  expect_equal(history$cumulative$LinUCBGeneral$cum_regret,1.1,tolerance = 0.00001)
 
 
 })
@@ -83,7 +83,7 @@ test_that("ContextualLogitBandit - intercept FALSE", {
   horizon       <- 10L
   simulations   <- 10L
 
-  policy        <- ContextualThompsonSamplingPolicy$new(delta=0.5, R=0.01, epsilon=0.5)
+  policy        <- ContextualLinTSPolicy$new(0.1)
   expect_identical(typeof(policy), "environment")
 
   agent         <- Agent$new(policy, bandit)
@@ -92,7 +92,7 @@ test_that("ContextualLogitBandit - intercept FALSE", {
   simulation    <- Simulator$new(agent, horizon, simulations, do_parallel = FALSE)
   history       <- simulation$run()
 
-  expect_equal(history$cumulative$ContextualThompsonSampling$cum_regret,4,tolerance = 0.00001)
+  expect_equal(history$cumulative$ContextualLinTS$cum_regret,1.1,tolerance = 0.00001)
 
 })
 
@@ -111,7 +111,7 @@ test_that("ContextualLinearBandit, binary_rewards  = FALSE", {
   history        <- simulation$run()
 
 
-  expect_equal(history$cumulative$LinUCBDisjointOptimized$cum_regret,5.64,  tolerance = 0.001)
+  expect_equal(history$cumulative$LinUCBDisjointOptimized$cum_regret,4.86,  tolerance = 0.001)
 
 })
 
@@ -130,7 +130,7 @@ test_that("ContextualLinearBandit, binary_rewards = TRUE", {
   simulation     <- Simulator$new(agents, horizon, simulations, do_parallel = FALSE)
   history        <- simulation$run()
 
-  expect_equal(history$cumulative$LinUCBDisjoint$cum_regret,7.4, tolerance = 0.001)
+  expect_equal(history$cumulative$LinUCBDisjoint$cum_regret,6.4, tolerance = 0.001)
   expect_equal(history$cumulative$LinUCBDisjoint$cum_regret,
                history$cumulative$LinUCBDisjointOptimized$cum_regret)
 
@@ -159,8 +159,8 @@ test_that("ContextualWheelBandit", {
   simulation     <- Simulator$new(agents, horizon, simulations, do_parallel = FALSE)
   history        <- simulation$run()
 
-  expect_equal(history$cumulative$LinUCBDisjointOptimized$cum_regret,55.4, tolerance = 0.01)
-  expect_equal(history$cumulative$UCB1$cum_regret,35.8, tolerance = 0.001)
+  expect_equal(history$cumulative$LinUCBDisjointOptimized$cum_regret,45.6, tolerance = 0.01)
+  expect_equal(history$cumulative$UCB1$cum_regret,35.8, tolerance = 0.01)
 
 })
 
@@ -175,7 +175,7 @@ test_that("BasicGaussianBandit", {
 
   history            <- Simulator$new(agent, horizon, sims, do_parallel = FALSE)$run()
 
-  expect_equal(history$cumulative$EpsilonGreedy$cum_regret, 8.21, tolerance = 0.01)
+  expect_equal(history$cumulative$EpsilonGreedy$cum_regret, 2.09, tolerance = 0.01)
 
 })
 
@@ -195,21 +195,21 @@ test_that("BasicBernoulliBandit MAB policies", {
                              Agent$new(GittinsBrezziLaiPolicy$new(), bandit),
                              Agent$new(UCB1Policy$new(), bandit),
                              Agent$new(SoftmaxPolicy$new(0.1), bandit),
-                             Agent$new(SimpleBTSPolicy$new(), bandit)
+                             Agent$new(BootstrapTSPolicy$new(), bandit)
   )
 
   simulation         <- Simulator$new(agents, horizon, simulations, do_parallel = FALSE)
   history            <- simulation$run()
 
-  expect_equal(history$cumulative$Random$cum_regret,5.2, tolerance = 0.01)
+  expect_equal(history$cumulative$Random$cum_regret,5.3, tolerance = 0.01)
   expect_equal(history$cumulative$GittinsBrezziLai$cum_regret,1, tolerance = 0.01)
-  expect_equal(history$cumulative$Exp3$cum_regret, 6.1, tolerance = 0.01)
-  expect_equal(history$cumulative$UCB1$cum_regret, 3.7, tolerance = 0.01)
-  expect_equal(history$cumulative$ThompsonSampling$cum_regret,2.2 , tolerance = 0.01)
-  expect_equal(history$cumulative$EpsilonGreedy$cum_regret,3.2, tolerance = 0.01)
-  expect_equal(history$cumulative$EpsilonFirst$cum_regret,2.8, tolerance = 0.01)
-  expect_equal(history$cumulative$Softmax$cum_regret,1.3, tolerance = 0.01)
-  expect_equal(history$cumulative$SimpleBTS$cum_regret,1.8, tolerance = 0.01)
+  expect_equal(history$cumulative$Exp3$cum_regret, 5, tolerance = 0.01)
+  expect_equal(history$cumulative$UCB1$cum_regret, 3.4 , tolerance = 0.01)
+  expect_equal(history$cumulative$ThompsonSampling$cum_regret, 2.9 , tolerance = 0.01)
+  expect_equal(history$cumulative$EpsilonGreedy$cum_regret,2.8, tolerance = 0.01)
+  expect_equal(history$cumulative$EpsilonFirst$cum_regret,4.3, tolerance = 0.01)
+  expect_equal(history$cumulative$Softmax$cum_regret,2.8 , tolerance = 0.01)
+  expect_equal(history$cumulative$BootstrapTS$cum_regret,2.8, tolerance = 0.01)
 
 })
 
@@ -228,7 +228,7 @@ test_that("BasicBernoulliBandit Long", {
   simulation         <- Simulator$new(agents, horizon, simulations, do_parallel = FALSE)
   history            <- simulation$run()
 
-  expect_equal(history$cumulative$GittinsBrezziLai$cum_regret, 82, tolerance = 0.01)
+  expect_equal(history$cumulative$GittinsBrezziLai$cum_regret, 3, tolerance = 0.01)
 
 })
 
@@ -249,22 +249,22 @@ test_that("ContextualPrecachingBandit MAB policies", {
                              Agent$new(GittinsBrezziLaiPolicy$new(), bandit),
                              Agent$new(UCB1Policy$new(), bandit),
                              Agent$new(SoftmaxPolicy$new(0.1), bandit),
-                             Agent$new(SimpleBTSPolicy$new(), bandit)
+                             Agent$new(BootstrapTSPolicy$new(), bandit)
   )
 
   simulation         <- Simulator$new(agents, horizon, simulations, do_parallel = FALSE)
   history            <- simulation$run()
 
-  expect_equal(history$cumulative$Random$cum_regret,3.1, tolerance = 0.01)
-  expect_equal(history$cumulative$Oracle$cum_regret,0, tolerance = 0.01)
-  expect_equal(history$cumulative$GittinsBrezziLai$cum_regret,1.5, tolerance = 0.01)
-  expect_equal(history$cumulative$Exp3$cum_regret,2.9, tolerance = 0.01)
-  expect_equal(history$cumulative$UCB1$cum_regret,2.8, tolerance = 0.01)
-  expect_equal(history$cumulative$ThompsonSampling$cum_regret,2.8, tolerance = 0.01)
-  expect_equal(history$cumulative$EpsilonGreedy$cum_regret,2.3, tolerance = 0.01)
+  expect_equal(history$cumulative$Random$cum_regret,3.4, tolerance = 0.01)
+  expect_equal(history$cumulative$Oracle$cum_regret,0.9, tolerance = 0.01)
+  expect_equal(history$cumulative$GittinsBrezziLai$cum_regret,3.1, tolerance = 0.01)
+  expect_equal(history$cumulative$Exp3$cum_regret,3.5, tolerance = 0.01)
+  expect_equal(history$cumulative$UCB1$cum_regret,3.4, tolerance = 0.01)
+  expect_equal(history$cumulative$ThompsonSampling$cum_regret,3, tolerance = 0.01)
+  expect_equal(history$cumulative$EpsilonGreedy$cum_regret,3.3, tolerance = 0.01)
   expect_equal(history$cumulative$EpsilonFirst$cum_regret, 3.5, tolerance = 0.01)
-  expect_equal(history$cumulative$Softmax$cum_regret,1.9, tolerance = 0.01)
-  expect_equal(history$cumulative$SimpleBTS$cum_regret,2.1, tolerance = 0.01)
+  expect_equal(history$cumulative$Softmax$cum_regret,3, tolerance = 0.01)
+  expect_equal(history$cumulative$BootstrapTS$cum_regret,2.7, tolerance = 0.01)
 
 })
 
@@ -304,7 +304,7 @@ test_that("ContinuumBandit", {
                                            simulations = simulations,
                                            do_parallel =  FALSE)$run()
 
-  expect_equal(history$cumulative$Lif$reward,  2.84, tolerance = 0.01)
+  expect_equal(history$cumulative$Lif$reward,  2.66, tolerance = 0.01)
 
 })
 
@@ -315,28 +315,26 @@ test_that("ContextualHybridBandit", {
 
   bandit        <- ContextualHybridBandit$new(k = 100, shared_features = 10, unique_features = 2)
 
-  agents        <- list(Agent$new(ContextualThompsonSamplingPolicy$new(delta=0.5, R=0.01, epsilon=0.5), bandit),
+  agents        <- list(Agent$new(ContextualLinTSPolicy$new(0.1), bandit),
                         Agent$new(EpsilonGreedyPolicy$new(0.1), bandit),
                         Agent$new(LinUCBGeneralPolicy$new(0.6), bandit),
                         Agent$new(ContextualEpochGreedyPolicy$new(8), bandit),
                         Agent$new(LinUCBHybridPolicy$new(0.6), bandit),
                         Agent$new(LinUCBHybridPolicy$new(0.6), bandit),
                         Agent$new(LinUCBHybridOptimizedPolicy$new(0.6), bandit),
-                        Agent$new(GlmUCBPolicy$new(), bandit),
                         Agent$new(LinUCBDisjointOptimizedPolicy$new(0.6), bandit))
 
   simulation     <- Simulator$new(agents, horizon, simulations, do_parallel = FALSE)
   history        <- simulation$run()
 
-  expect_equal(history$cumulative$ContextualThompsonSampling$reward,  0.9, tolerance = 0.01)
-  expect_equal(history$cumulative$EpsilonGreedy$reward,  0.7, tolerance = 0.01)
-  expect_equal(history$cumulative$LinUCBGeneral$reward,  0.8, tolerance = 0.01)
+  expect_equal(history$cumulative$ContextualLinTS$reward,  0.7, tolerance = 0.01)
+  expect_equal(history$cumulative$EpsilonGreedy$reward,  0.6, tolerance = 0.01)
+  expect_equal(history$cumulative$LinUCBGeneral$reward,  0.7, tolerance = 0.01)
   expect_equal(history$cumulative$ContextualEpochGreedy$reward,  0.6, tolerance = 0.01)
   expect_equal(history$cumulative$LinUCBDisjointOptimized$reward,  0.7, tolerance = 0.01)
-  expect_equal(history$cumulative$GlmUCB$cum_reward,  7.2, tolerance = 0.01)
 
 
-  expect_equal(history$cumulative$LinUCBHybridOptimized$cum_reward, 7.7, tolerance = 0.01)
+  expect_equal(history$cumulative$LinUCBHybridOptimized$cum_reward, 8, tolerance = 0.01)
   expect_equal(history$cumulative$LinUCBHybrid$cum_reward,  history$cumulative$LinUCBHybridOptimized$cum_reward)
 
 
@@ -350,41 +348,7 @@ test_that("ContextualHybridBandit", {
   simulation     <- Simulator$new(agents, horizon, simulations, do_parallel = FALSE)
   history        <- simulation$run()
 
-  expect_equal(history$cumulative$ContextualEpochGreedy$cum_reward,  73, tolerance = 0.01)
-})
-
-test_that("ContextualPrecachingBandit GlmUCB", {
-
-
-  context_weights    <- matrix(  c( 0.8, 0.1, 0.1,
-                                    0.1, 0.8, 0.1,
-                                    0.1, 0.1, 0.8), nrow = 3, ncol = 3, byrow = TRUE)
-
-  horizon     <- 300L
-  simulations <- 1L
-  bandit      <- ContextualPrecachingBandit$new(weights = context_weights)
-
-  policy      <- RandomPolicy$new()
-
-  agents <-
-    list(
-      Agent$new(GlmUCBPolicy$new(), bandit)
-    )
-
-  simulation  <-
-    Simulator$new(
-      agents,
-      horizon = horizon,
-      simulations = simulations,
-      do_parallel = FALSE
-    )
-
-  history        <- simulation$run()
-
-  # have to delve into this: why glmucb not always stable, 167, 169...
-
-  expect_equal(history$cumulative$GlmUCB$cum_reward,  99, tolerance = 0.2)
-
+  expect_equal(history$cumulative$ContextualEpochGreedy$cum_reward,  77, tolerance = 0.01)
 })
 
 test_that("ContextualBernoulliBandit", {
@@ -399,13 +363,13 @@ test_that("ContextualBernoulliBandit", {
 
   bandit <- ContextualBernoulliBandit$new(weights = weights)
   agents <- list(Agent$new(EpsilonGreedyPolicy$new(0.1), bandit, "EGreedy"),
-                 Agent$new(ContextualEpsilonGreedy$new(0.1), bandit, "cEGreedy"),
+                 Agent$new(ContextualEpsilonGreedyPolicy$new(0.1), bandit, "cEGreedy"),
                  Agent$new(ContextualLogitBTSPolicy$new(10), bandit, "LogitBTS"),
                  Agent$new(LinUCBDisjointPolicy$new(0.6), bandit, "LinUCB"))
   simulation <- Simulator$new(agents, horizon, simulations, do_parallel = FALSE)
   history <- simulation$run()
 
-  expect_equal(history$cumulative$EGreedy$cum_reward,  5.9, tolerance = 0.2)
+  expect_equal(history$cumulative$EGreedy$cum_reward,  7.6, tolerance = 0.2)
   expect_equal(history$cumulative$cEGreedy$cum_reward,  9.9, tolerance = 0.2)
   expect_equal(history$cumulative$LogitBTS$cum_reward,  11.2, tolerance = 0.2)
   expect_equal(history$cumulative$LinUCB$cum_reward,  10.5, tolerance = 0.2)
@@ -424,16 +388,16 @@ test_that("ContextualBernoulliBandit", {
 
   bandit <- ContextualBinaryBandit$new(weights = weights)
   agents <- list(Agent$new(EpsilonGreedyPolicy$new(0.1), bandit, "EGreedy"),
-                 Agent$new(ContextualEpsilonGreedy$new(0.1), bandit, "cEGreedy"),
+                 Agent$new(ContextualEpsilonGreedyPolicy$new(0.1), bandit, "cEGreedy"),
                  Agent$new(ContextualLogitBTSPolicy$new(10), bandit, "LogitBTS"),
                  Agent$new(LinUCBDisjointPolicy$new(0.6), bandit, "LinUCB"))
   simulation <- Simulator$new(agents, horizon, simulations, do_parallel = FALSE)
   history <- simulation$run()
 
-  expect_equal(history$cumulative$EGreedy$cum_reward,  6.4, tolerance = 0.2)
+  expect_equal(history$cumulative$EGreedy$cum_reward,  8.1, tolerance = 0.2)
   expect_equal(history$cumulative$cEGreedy$cum_reward,  8.5, tolerance = 0.2)
   expect_equal(history$cumulative$LogitBTS$cum_reward,  7.3, tolerance = 0.2)
-  expect_equal(history$cumulative$LinUCB$cum_reward,  8.5, tolerance = 0.2)
+  expect_equal(history$cumulative$LinUCB$cum_reward, 6.4, tolerance = 0.2)
 
 })
 
@@ -470,9 +434,9 @@ test_that("BasicBernoulliBandit MAB policies", {
 
   direct <- simulation$run()
 
-  expect_equal(direct$get_cumulative_result(t=20)$LinUCBDisjoint$cum_reward,7)
-  expect_equal(direct$get_cumulative_result(t=20)$EpsilonGreedy$cum_reward,6)
-  expect_equal(direct$get_cumulative_result(t=20)$Oracle$cum_reward,13)
+  expect_equal(direct$get_cumulative_result(t=20)$LinUCBDisjoint$cum_reward,8)
+  expect_equal(direct$get_cumulative_result(t=20)$EpsilonGreedy$cum_reward,4)
+  expect_equal(direct$get_cumulative_result(t=20)$Oracle$cum_reward,6)
 
   ########################### create random log data ################################
 
@@ -502,8 +466,8 @@ test_that("BasicBernoulliBandit MAB policies", {
   before <- simulation$run()
   before$save("test.RData")
 
-  expect_equal(before$get_cumulative_result(t=20)$Random$cum_reward,10)
-  expect_equal(before$get_cumulative_result(t=40)$Random$cum_reward,15)
+  expect_equal(before$get_cumulative_result(t=20)$Random$cum_reward,6)
+  expect_equal(before$get_cumulative_result(t=40)$Random$cum_reward,17)
 
   ######################## use the log to test a policy ##########################
 
@@ -511,7 +475,8 @@ test_that("BasicBernoulliBandit MAB policies", {
   history$load("test.RData")
   log_S <- history$get_data_table()
 
-  bandit <- OfflineReplayEvaluatorBandit$new(offline_data = log_S, k = 3, d = 3)
+  formula     <- formula(paste0("reward ~ choice | ",paste(paste0("X.", 1:9),collapse="+")))
+  bandit      <- OfflineReplayEvaluatorBandit$new(formula = formula, data = log_S, k = 3, d = 3)
 
   agents <-
     list(
@@ -526,19 +491,18 @@ test_that("BasicBernoulliBandit MAB policies", {
       horizon = horizon,
       simulations = simulations,
       t_over_sims = TRUE,
-      do_parallel = FALSE,
-      reindex = TRUE
+      do_parallel = FALSE
     )
 
   after <- simulation$run()
 
-  expect_equal(after$get_cumulative_result(t=20)$LinUCBDisjoint$cum_reward,8)
-  expect_equal(after$get_cumulative_result(t=20)$EpsilonGreedy$cum_reward,5)
-  expect_equal(after$get_cumulative_result(t=20)$Oracle$cum_reward,14)
+  expect_equal(after$get_cumulative_result(t=20)$LinUCBDisjoint$cum_reward,9)
+  expect_equal(after$get_cumulative_result(t=20)$EpsilonGreedy$cum_reward,10)
+  expect_equal(after$get_cumulative_result(t=20)$Oracle$cum_reward,5)
 
-  expect_equal(after$get_cumulative_result(t=25)$LinUCBDisjoint$cum_reward,10)
-  expect_equal(after$get_cumulative_result(t=25)$EpsilonGreedy$cum_reward,6)
-  expect_equal(after$get_cumulative_result(t=25)$Oracle$cum_reward,17)
+  expect_equal(after$get_cumulative_result(t=21)$LinUCBDisjoint$cum_reward,10)
+  expect_equal(after$get_cumulative_result(t=21)$EpsilonGreedy$cum_reward,10)
+  expect_equal(after$get_cumulative_result(t=21)$Oracle$cum_reward,5)
 
   ######################## remove optimal values from log and try again ##########################
 
@@ -549,7 +513,8 @@ test_that("BasicBernoulliBandit MAB policies", {
   log_S$optimal_arm <- NULL
   log_S$optimal_reward <- NULL
 
-  bandit <- OfflineReplayEvaluatorBandit$new(offline_data = log_S, k = 3, d = 3)
+  formula     <- formula(paste0("reward ~ choice |",paste(paste0("X.", 1:9),collapse="+")))
+  bandit      <- OfflineReplayEvaluatorBandit$new(formula = formula, data = log_S, k = 3, d = 3)
 
   agents <-
     list(
@@ -564,20 +529,15 @@ test_that("BasicBernoulliBandit MAB policies", {
       horizon = horizon,
       simulations = simulations,
       t_over_sims = TRUE,
-      do_parallel = FALSE,
-      reindex = TRUE
+      do_parallel = FALSE
     )
 
   after <- simulation$run()
   if (file.exists("test.RData")) file.remove("test.RData")
 
-  expect_equal(after$get_cumulative_result(t=20)$LinUCBDisjoint$cum_reward,8)
-  expect_equal(after$get_cumulative_result(t=20)$EpsilonGreedy$cum_reward,5)
-  expect_equal(is.na(after$get_cumulative_result(t=20)$Oracle$cum_reward), TRUE)
-
-  expect_equal(after$get_cumulative_result(t=25)$LinUCBDisjoint$cum_reward,10)
-  expect_equal(after$get_cumulative_result(t=25)$EpsilonGreedy$cum_reward,6)
-  expect_equal(is.na(after$get_cumulative_result(t=25)$Oracle$cum_reward), TRUE)
+  expect_equal(after$get_cumulative_result(t=20)$LinUCBDisjoint$cum_reward,9)
+  expect_equal(after$get_cumulative_result(t=20)$EpsilonGreedy$cum_reward,10)
+  expect_equal(after$get_cumulative_result(t=20)$Oracle$cum_reward, 5)
 
 })
 
@@ -623,35 +583,36 @@ test_that("PropensityWeightingBandit", {
 
   # ---
 
-  bandit             <- OfflineReplayEvaluatorBandit$new(b_dt,2,2)
+  formula            <- formula("reward ~ choice | X.1 + X.2")
+  bandit             <- OfflineReplayEvaluatorBandit$new(formula = formula, data = b_dt, k = 2, d = 2)
+
   policy             <- UCB1Policy$new()
   agent              <- Agent$new(policy, bandit, "rb")
 
-  simulation         <- Simulator$new(agent, horizon, simulations, reindex = TRUE, do_parallel = FALSE)
+  simulation         <- Simulator$new(agent, horizon, simulations, do_parallel = FALSE)
   history            <- simulation$run()
   rb_dt              <- history$get_data_table()
 
   a <- sum(rb_dt[choice==1]$reward)/nrow(rb_dt[choice==1])
   b <- sum(rb_dt[choice==2]$reward)/nrow(rb_dt[choice==2])
 
-  expect_equal(a,  0.416, tolerance = 0.02)
-  expect_equal(b,  0.594, tolerance = 0.02)
+  expect_equal(a,  0.528, tolerance = 0.02)
+  expect_equal(b,  0.542, tolerance = 0.02)
 
   # ---
-
-  bandit                 <- OfflinePropensityWeightingBandit$new(b_dt,2,2)
+  formula                <- formula("reward ~ choice | X.1 + X.2 | propensity")
+  bandit                 <- OfflinePropensityWeightingBandit$new(formula = formula, data = b_dt, k = 2, d = 2)
   policy                 <- UCB1Policy$new()
   agent                  <- Agent$new(policy, bandit, "prop")
-
-  simulation             <- Simulator$new(agent, horizon, simulations, reindex = TRUE, do_parallel = FALSE)
+  simulation             <- Simulator$new(agent, horizon, simulations, do_parallel = FALSE)
   history                <- simulation$run()
   prop_dt                <- history$get_data_table()
 
   c <- sum(prop_dt[choice==1]$reward)/nrow(prop_dt[choice==1])
   d <- sum(prop_dt[choice==2]$reward)/nrow(prop_dt[choice==2])
 
-  expect_equal(c,  0.636, tolerance = 0.02)
-  expect_equal(d,  0.483, tolerance = 0.02)
+  expect_equal(c, 0.622 , tolerance = 0.02)
+  expect_equal(d, 0.415 , tolerance = 0.02)
 
 })
 

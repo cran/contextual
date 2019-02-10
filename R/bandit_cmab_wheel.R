@@ -10,6 +10,7 @@ ContextualWheelBandit <- R6::R6Class(
     std_v = NULL,
     mu_large = NULL,
     std_large = NULL,
+    best_arm = NULL,
     class_name = "ContextualWheelBandit",
     initialize  = function(delta, mean_v, std_v, mu_large, std_large) {
       self$k                                    <- 5
@@ -33,23 +34,30 @@ ContextualWheelBandit <- R6::R6Class(
       # sample rewards
 
       self$rewards                              <- rnorm(self$k,self$mean_v,self$std_v)
+      local_means                               <- self$mean_v
 
       if (norm(as.matrix(X),"2") >= self$delta) {
         r_big                                   <- rnorm(1,self$mu_large, self$std_large)
         if (X[1] > 0) {
           if (X[2] > 0) {
             self$rewards[1]                     <- r_big
+            local_means[1]                      <- self$mu_large
           } else {
             self$rewards[2]                     <- r_big
+            local_means[2]                      <- self$mu_large
           }
         } else {
           if (X[2] > 0) {
             self$rewards[3]                     <- r_big
+            local_means[3]                      <- self$mu_large
           } else {
             self$rewards[4]                     <- r_big
+            local_means[4]                      <- self$mu_large
           }
         }
       }
+
+      self$best_arm                             <- which_max_tied(local_means)
 
       context                                   <- list(
         k = self$k,
@@ -61,7 +69,7 @@ ContextualWheelBandit <- R6::R6Class(
     },
     get_reward = function(t, context_common, action) {
       rewards        <- self$rewards
-      optimal_arm    <- which_max_tied(rewards)
+      optimal_arm    <- self$best_arm
       reward         <- list(
         reward                   = rewards[action$choice],
         optimal_arm              = optimal_arm,
@@ -149,18 +157,21 @@ ContextualWheelBandit <- R6::R6Class(
 #'
 #' @references
 #'
-#' Riquelme, C., Tucker, G., & Snoek, J. (2018). Deep Bayesian Bandits Showdown: An Empirical Comparison of Bayesian Deep Networks for Thompson Sampling. arXiv preprint arXiv:1802.09127.
+#' Riquelme, C., Tucker, G., & Snoek, J. (2018). Deep Bayesian Bandits Showdown: An Empirical Comparison of
+#' Bayesian Deep Networks for Thompson Sampling. arXiv preprint arXiv:1802.09127.
 #'
-#' Implementation follows \url{https://github.com/tensorflow/models/tree/master/research/deep_contextual_bandits}
+#' Implementation follows
+#' \url{https://github.com/tensorflow/models/tree/master/research/deep_contextual_bandits}
 #'
 #' @seealso
 #'
 #' Core contextual classes: \code{\link{Bandit}}, \code{\link{Policy}}, \code{\link{Simulator}},
 #' \code{\link{Agent}}, \code{\link{History}}, \code{\link{Plot}}
 #'
-#' Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},  \code{\link{OfflineReplayEvaluatorBandit}}
+#' Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},
+#' \code{\link{OfflineReplayEvaluatorBandit}}
 #'
-#' Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualThompsonSamplingPolicy}}
+#' Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualLinTSPolicy}}
 #'
 #' @examples
 #' \dontrun{

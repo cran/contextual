@@ -14,12 +14,11 @@ SoftmaxPolicy <- R6::R6Class(
       self$theta_to_arms <- list('n' = 0, 'mean' = 0)
     },
     get_action = function(t, context) {
-      z <- sum(exp(unlist(self$theta$mean)/tau))
-      p <- exp(unlist(self$theta$mean)/tau)/z
+      exp_est_tau <- exp(unlist(self$theta$mean)/tau)
+      p <- exp_est_tau/sum(exp_est_tau)
       action$choice <- categorical_draw(p)
-      action
+      return(action)
     },
-
     set_reward = function(t, context, action, reward) {
       arm <- action$choice
       reward <- reward$reward
@@ -30,11 +29,12 @@ SoftmaxPolicy <- R6::R6Class(
     categorical_draw = function(probs) {
       arms <- length(probs)
       cumulative_probability <- 0.0
+      z <- runif(1)
       for (i in 1:arms) {
         inc(cumulative_probability) <- probs[i]
-        if ( cumulative_probability > runif(1) ) return(i)
+        if ( cumulative_probability > z ) return(i)
       }
-      sample(arms, 1, replace = TRUE) #nocov
+      return(arms)
     }
 
   )
@@ -42,39 +42,33 @@ SoftmaxPolicy <- R6::R6Class(
 
 #' Policy: Softmax
 #'
-#' \code{SoftmaxPolicy} chooses an arm at
-#' random (explores) with probability \code{epsilon}, otherwise it
-#' greedily chooses (exploits) the arm with the highest estimated
-#' reward.
+#' \code{SoftmaxPolicy} is very similar to \link{Exp3Policy}, but selects an arm based on the probability from
+#' the Boltmann distribution. It makes use of a temperature parameter tau,
+#' which specifies how many arms we can explore. When tau is high, all arms are explored equally,
+#' when tau is low, arms offering higher rewards will be chosen.
 #'
 #' @name SoftmaxPolicy
 #'
-#'
 #' @section Usage:
 #' \preformatted{
-#' policy <- SoftmaxPolicy(epsilon = 0.1)
+#' policy <- SoftmaxPolicy(tau = 0.1)
 #' }
 #'
 #' @section Arguments:
 #'
 #' \describe{
-#'   \item{\code{epsilon}}{
-#'    double, value in the closed interval \code{(0,1]} indicating the probablilty with which
-#'    arms are selected at random (explored).
-#'    Otherwise, \code{SoftmaxPolicy} chooses the best arm (exploits)
-#'    with a probability of \code{1 - epsilon}
-#'
-#'   }
-#'   \item{\code{name}}{
-#'    character string specifying this policy. \code{name}
-#'    is, among others, saved to the History log and displayed in summaries and plots.
+#'   \item{\code{tau = 0.1}}{
+#'   double, temperature parameter tau specifies how many arms we can explore.
+#'   When tau is high, all arms are explored equally, when tau is low, arms offering higher
+#'   rewards will be chosen.
 #'   }
 #' }
 #'
 #' @section Methods:
 #'
 #' \describe{
-#'   \item{\code{new(epsilon = 0.1)}}{ Generates a new \code{SoftmaxPolicy} object. Arguments are defined in the Argument section above.}
+#'   \item{\code{new(epsilon = 0.1)}}{ Generates a new \code{SoftmaxPolicy} object. Arguments are defined in
+#'   the Argument section above.}
 #' }
 #'
 #' \describe{
@@ -101,20 +95,21 @@ SoftmaxPolicy <- R6::R6Class(
 #'
 #' @references
 #'
-#' Gittins, J., Glazebrook, K., & Weber, R. (2011). Multi-armed bandit allocation indices. John Wiley & Sons. (Original work published 1989)
+#' Kuleshov, V., & Precup, D. (2014). Algorithms for multi-armed bandit problems.
+#' arXiv preprint arXiv:1402.6028.
 #'
-#' Sutton, R. S. (1996). Generalization in reinforcement learning: Successful examples using sparse coarse coding. In Advances in neural information processing systems (pp. 1038-1044).
-#'
-#' Strehl, A., & Littman, M. (2004). Exploration via model based interval estimation. In International Conference on Machine Learning, number Icml.
+#' Cesa-Bianchi, N., Gentile, C., Lugosi, G., & Neu, G. (2017). Boltzmann exploration done right.
+#' In Advances in Neural Information Processing Systems (pp. 6284-6293).
 #'
 #' @seealso
 #'
 #' Core contextual classes: \code{\link{Bandit}}, \code{\link{Policy}}, \code{\link{Simulator}},
 #' \code{\link{Agent}}, \code{\link{History}}, \code{\link{Plot}}
 #'
-#' Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},  \code{\link{OfflineReplayEvaluatorBandit}}
+#' Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},
+#' \code{\link{OfflineReplayEvaluatorBandit}}
 #'
-#' Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualThompsonSamplingPolicy}}
+#' Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualLinTSPolicy}}
 #'
 #' @examples
 #'

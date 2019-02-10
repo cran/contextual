@@ -2,16 +2,16 @@ context("Plot")
 
 test_that("test plots", {
 
-  # run vdiffr::validate_cases() at commandline to generate test svg'
+  # run vdiffr::validate_cases() at commandline to generate test svg
 
   # debug using: print(gdtools::version_freetype())
   # waiting for new release before test, now:
 
-  skip("CRAN release versions skip all vdiffr test code.")
+  # skip("CRAN release versions skip all vdiffr test code.")
 
-  #skip_on_cran()
-  #skip_on_bioc()
-  #skip_if_not_installed("vdiffr")
+  skip_on_cran()
+  skip_on_bioc()
+  skip_if_not_installed("vdiffr")
 
   bandit             <-
     ContextualPrecachingBandit$new(weights = c(0.9, 0.1, 0.1))
@@ -41,12 +41,6 @@ test_that("test plots", {
     ),
     "Need to set disp to"
   )
-
-
-  # wait for next version available on cran - works on most test platforms,
-  # bot not on all
-
-
 
   vdiffr::expect_doppelganger(
     "Basic cumulative plot",

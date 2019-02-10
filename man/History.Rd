@@ -3,8 +3,6 @@
 \name{History}
 \alias{History}
 \alias{print_data}
-\alias{reindex}
-\alias{delete_empty_rows}
 \alias{clear_data_table}
 \alias{set_data_table}
 \alias{get_data_table}
@@ -74,35 +72,61 @@ full data file. This can be of use with (a first) analysis of very large data fi
 \item{\code{get_data_frame()}}{
 Returns the \code{History} log as a \code{data.frame}.
 }
+\item{\code{set_data_frame(df, auto_stats = TRUE)}}{
+Sets the \code{History} log with the data in \code{data.frame} \code{dt}.
+Recalculates cumulative statistics when auto_stats is TRUE.
+}
 \item{\code{get_data_table()}}{
 Returns the \code{History} log as a \code{data.table}.
 }
-\item{\code{set_data_table(dt)}}{
+\item{\code{set_data_table(dt, auto_stats = TRUE)}}{
 Sets the \code{History} log with the data in \code{data.table} \code{dt}.
+Recalculates cumulative statistics when auto_stats is TRUE.
 }
 \item{\code{clear_data_table()}}{
-Clears the \code{History} log.
+Clear \code{History}'s internal \code{data.table} log.
 }
-\item{\code{save_csv(filename = NA, context_to_columns = FALSE)}}{
-Saves History data to csv file. When context_to_columns is TRUE, the "context" column will
-be split over multiple columns X1 to X...
+\item{\code{save_csv(filename = NA)}}{
+Saves History data to csv file.
 }
-\item{\code{delete_empty_rows()}}{
-Deletes all empty rows in the \code{History} log and re-indexes the \code{t} column grouped
-by agent and simulation.
-}
-\item{\code{reindex(truncate = TRUE)}}{
-Removes empty rows from the \code{History} log, reindexes the \code{t} column, and,
-if \code{truncate} is \code{TRUE}, truncates the resulting data to the shortest simulation
-grouped by agent and simulation.
-}
-\item{\code{reindex(truncate = TRUE)}}{
-Removes empty rows from the \code{History} log, reindexes the \code{t} column, and,
-if \code{truncate} is \code{TRUE}, truncates the resulting data to the shortest simulation
-grouped by agent and simulation.
+\item{\code{extract_theta(limit_agents, parameter, arm, tail = NULL)}}{
+Extract theta parameter from theta list for \code{limit_agents},
+where \code{parameter} sets the to be retrieved parameter or vector of parameters in theta,
+\code{arm} is the relevant integer index of the arm or vector of arms of interest, and the
+optional \code{tail} selects the last elements in the list.
+Returns a vector, matrix or array with the selected theta values.
 }
 \item{\code{print_data()}}{
 Prints a summary of the \code{History} log.
+}
+\item{\code{update_statistics()}}{
+Updates cumulative statistics.
+}
+\item{\code{get_agent_list()}}{
+Retrieve list of agents in History.
+}
+\item{\code{get_agent_count()}}{
+Retrieve number of agents in History.
+}
+\item{\code{get_simulation_count()}}{
+Retrieve number of simulations in History.
+}
+\item{\code{get_arm_choice_percentage(limit_agents)}}{
+Retrieve list of percentage arms chosen per agent for \code{limit_agents}.
+}
+\item{\code{get_meta_data()}}{
+Retrieve History meta data.
+}
+\item{\code{set_meta_data = function(key, value, group = "sim", agent_name = NULL)}}{
+Set History meta data.
+}
+\item{\code{get_cumulative_data = function(limit_agents = NULL, limit_cols = NULL, interval = 1,
+  cum_average = FALSE))}}{
+Retrieve cumulative statistics data.
+}
+\item{\code{get_cumulative_result = function(limit_agents = NULL, limit_cols = NULL, interval = 1,
+  cum_average = FALSE))}}{
+Retrieve cumulative statistics data point.
 }
 \item{\code{data}}{
 Active binding, read access to History's internal data.table.
@@ -147,7 +171,8 @@ Active binding, read access to meta data by name through $ accessor.
 Core contextual classes: \code{\link{Bandit}}, \code{\link{Policy}}, \code{\link{Simulator}},
 \code{\link{Agent}}, \code{\link{History}}, \code{\link{Plot}}
 
-Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},  \code{\link{OfflineReplayEvaluatorBandit}}
+Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},
+\code{\link{OfflineReplayEvaluatorBandit}}
 
-Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualThompsonSamplingPolicy}}
+Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualLinTSPolicy}}
 }

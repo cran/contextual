@@ -39,6 +39,10 @@ plot.History <- function(x, ...) {
     use_colors <- eval(args$use_colors)
   else
     use_colors <- TRUE
+  if ("log" %in% names(args))
+    log <- eval(args$log)
+  else
+    log <- ""
   if ("plot_only_disp" %in% names(args))
     plot_only_disp <- eval(args$plot_only_disp)
   else
@@ -106,6 +110,10 @@ plot.History <- function(x, ...) {
     legend_border <- eval(args$legend_border)
   else
     legend_border <- NULL
+  if ("cum_average" %in% names(args))
+    cum_average <- eval(args$cum_average)
+  else
+    cum_average <- FALSE
   if ("legend_title" %in% names(args))
     legend_title <- eval(args$legend_title)
   else
@@ -118,7 +126,7 @@ plot.History <- function(x, ...) {
     no_par <- eval(args$no_par)
   else
     no_par <- FALSE
-  checkmate::assert_choice(type, c("cumulative","average","arms"))
+  ### checkmate::assert_choice(type, c("cumulative","average","arms")) TODO: fix checkmate
   if (type == "cumulative") {
     Plot$new()$cumulative(
       x,
@@ -126,6 +134,7 @@ plot.History <- function(x, ...) {
       legend = legend,
       regret = regret,
       use_colors = use_colors,
+      log = log,
       disp = disp,
       plot_only_disp = plot_only_disp,
       traces = traces,
@@ -152,7 +161,7 @@ plot.History <- function(x, ...) {
       xlim = xlim,
       legend = legend,
       regret = regret,
-      use_colors = use_colors,
+      log = log,
       disp = disp,
       plot_only_disp = plot_only_disp,
       traces = traces,
@@ -170,6 +179,32 @@ plot.History <- function(x, ...) {
       legend_position = legend_position,
       legend_title = legend_title,
       no_par = no_par,
+      cum_average = cum_average,
+      limit_agents = limit_agents,
+      limit_context = limit_context
+    )
+  } else if (type == "optimal") {
+    Plot$new()$optimal(
+      x,
+      xlim = xlim,
+      legend = legend,
+      log = log,
+      disp = disp,
+      plot_only_disp = plot_only_disp,
+      traces = traces,
+      traces_max = traces_max,
+      traces_alpha = traces_alpha,
+      smooth = smooth,
+      interval = interval,
+      color_step = color_step,
+      lty_step = lty_step,
+      lwd = lwd,
+      ylim = ylim,
+      legend_labels = legend_labels,
+      legend_border = legend_border,
+      legend_position = legend_position,
+      legend_title = legend_title,
+      no_par = no_par,
       limit_agents = limit_agents,
       limit_context = limit_context
     )
@@ -179,6 +214,7 @@ plot.History <- function(x, ...) {
       xlim = xlim,
       legend = legend,
       use_colors = use_colors,
+      log = log,
       interval = interval,
       ylim = ylim,
       smooth = smooth,
@@ -228,9 +264,10 @@ print.History <- function(x, ...) {
 #' Core contextual classes: \code{\link{Bandit}}, \code{\link{Policy}}, \code{\link{Simulator}},
 #' \code{\link{Agent}}, \code{\link{History}}, \code{\link{Plot}}
 #'
-#' Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},  \code{\link{OfflineReplayEvaluatorBandit}}
+#' Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},
+#' \code{\link{OfflineReplayEvaluatorBandit}}
 #'
-#' Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualThompsonSamplingPolicy}}
+#' Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualLinTSPolicy}}
 #'
 #' @export
 summary.History <- function(object, ...) {

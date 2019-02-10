@@ -24,9 +24,9 @@ ContextualBinaryBandit <- R6::R6Class(
     get_reward = function(t, context, action) {
       arm            <- action$choice
       Xa             <- context$X
-      average_weight <- Xa %*% self$weights / sum(Xa)
-      rewards        <- as.double(average_weight > runif(self$k))
-      optimal_arm    <- which_max_tied(rewards)
+      weight         <- Xa %*% self$weights / sum(Xa)
+      rewards        <- as.double(weight > runif(self$k))
+      optimal_arm    <- which_max_tied(weight)
       reward  <- list(
         reward                   = rewards[arm],
         optimal_arm              = optimal_arm,
@@ -38,7 +38,7 @@ ContextualBinaryBandit <- R6::R6Class(
 
 #' Bandit: ContextualBinaryBandit
 #'
-#' Contextual Bernoulli multi-armed bandit with at least one context feature active at a time.
+#' Contextual Bernoulli multi-armed bandit where at least one context feature is active at a time.
 #'
 #' @name ContextualBinaryBandit
 #'
@@ -93,9 +93,10 @@ ContextualBinaryBandit <- R6::R6Class(
 #' Core contextual classes: \code{\link{Bandit}}, \code{\link{Policy}}, \code{\link{Simulator}},
 #' \code{\link{Agent}}, \code{\link{History}}, \code{\link{Plot}}
 #'
-#' Bandit subclass examples: \code{\link{ContextualBinaryBandit}}, \code{\link{ContextualLogitBandit}},  \code{\link{OfflineReplayEvaluatorBandit}}
+#' Bandit subclass examples: \code{\link{ContextualBinaryBandit}}, \code{\link{ContextualLogitBandit}},
+#' \code{\link{OfflineReplayEvaluatorBandit}}
 #'
-#' Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualThompsonSamplingPolicy}}
+#' Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualLinTSPolicy}}
 #'
 #' @examples
 #' \dontrun{

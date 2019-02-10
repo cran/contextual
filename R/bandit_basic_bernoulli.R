@@ -16,7 +16,7 @@ BasicBernoulliBandit <- R6::R6Class(
     },
     get_reward = function(t, context, action) {
       rewards        <- as.double(runif(self$k) < self$weights)
-      optimal_arm    <- which_max_tied(rewards)
+      optimal_arm    <- which_max_tied(self$weights)
       reward  <- list(
         reward                   = rewards[action$choice],
         optimal_arm              = optimal_arm,
@@ -88,9 +88,10 @@ BasicBernoulliBandit <- R6::R6Class(
 #' Core contextual classes: \code{\link{Bandit}}, \code{\link{Policy}}, \code{\link{Simulator}},
 #' \code{\link{Agent}}, \code{\link{History}}, \code{\link{Plot}}
 #'
-#' Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},  \code{\link{OfflineReplayEvaluatorBandit}}
+#' Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},
+#' \code{\link{OfflineReplayEvaluatorBandit}}
 #'
-#' Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualThompsonSamplingPolicy}}
+#' Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualLinTSPolicy}}
 #'
 #' @examples
 #' \dontrun{

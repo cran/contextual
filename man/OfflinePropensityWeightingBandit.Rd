@@ -2,14 +2,19 @@
 % Please edit documentation in R/bandit_offline_propensity_weighting.R
 \name{OfflinePropensityWeightingBandit}
 \alias{OfflinePropensityWeightingBandit}
-\title{Bandit: Offline Propensity Evaluator}
+\title{Bandit: Offline Propensity Weighted Replay}
 \description{
-Policy for the evaluation of policies with offline data.
+Policy for the evaluation of policies with offline data through replay with propensity weighting.
 }
 \section{Usage}{
 
 \preformatted{
-  bandit <- OfflinePropensityWeightingBandit(offline_data, k, d, randomize = TRUE)
+  bandit <- OfflinePropensityWeightingBandit(formula,
+                                             data, k = NULL, d = NULL,
+                                             unique = NULL, shared = NULL,
+                                             randomize = TRUE, replacement = TRUE,
+                                             jitter = TRUE, arm_multiply = TRUE,
+                                             inverted = FALSE)
 }
 }
 
@@ -17,17 +22,40 @@ Policy for the evaluation of policies with offline data.
 
 
 \describe{
-\item{\code{offline_data}}{
-data.table; offline data source (required)
+\item{\code{formula}}{
+formula (required). Format: \code{y.context ~ z.choice | x1.context + x2.xontext + ... | p.propensity }
+When leaving out p.propensity, Doubly Robust Bandit uses marginal prob per arm for propensities:
+By default,  adds an intercept to the context model. Exclude the intercept, by adding "0" or "-1" to
+the list of contextual features, as in:
+\code{y.context ~ z.choice | x1.context + x2.xontext -1 | p.propensity }
+}
+\item{\code{data}}{
+data.table or data.frame; offline data source (required)
 }
 \item{\code{k}}{
-integer; number of arms (required)
+integer; number of arms (optional). Optionally used to reformat the formula defined x.context vector
+as a \code{k x d} matrix. When making use of such matrix formatted contexts, you need to define custom
+intercept(s) when and where needed in data.table or data.frame.
 }
 \item{\code{d}}{
-integer; number of contextual features (required)
+integer; number of contextual features (optional) Optionally used to reformat the formula defined
+x.context vector as a \code{k x d} matrix. When making use of such matrix formatted contexts, you need
+to define custom intercept(s) when and where needed in data.table or data.frame.
 }
 \item{\code{randomize}}{
 logical; randomize rows of data stream per simulation (optional, default: TRUE)
+}
+\item{\code{replacement}}{
+logical; sample with replacement (optional, default: TRUE)
+}
+\item{\code{replacement}}{
+logical; add jitter to contextual features (optional, default: TRUE)
+}
+\item{\code{arm_multiply}}{
+logical; multiply the horizon by the number of arms (optional, default: TRUE)
+}
+\item{\code{inverted}}{
+logical; have the propensity scores been weighted (optional, default: FALSE)
 }
 \item{\code{unique}}{
 integer vector; index of disjoint features (optional)
@@ -44,8 +72,9 @@ integer vector; index of shared features (optional)
 
 \describe{
 
-\item{\code{new(offline_data, k, d, unique = NULL, shared = NULL, randomize = TRUE)}}{ generates
-and instantializes a new \code{OfflinePropensityWeightingBandit} instance. }
+\item{\code{new(formula, data, k = NULL, d = NULL, unique = NULL, shared = NULL, randomize = TRUE,
+                  replacement = TRUE, jitter = TRUE, arm_multiply = TRUE, inverted = FALSE)}}{
+generates and instantializes a new \code{OfflinePropensityWeightingBandit} instance. }
 
 \item{\code{get_context(t)}}{
 argument:
@@ -80,19 +109,60 @@ individual simulation when self$randomize is TRUE (default)
 \examples{
 \dontrun{
 
-## generate random policy log and save it
+library(contextual)
+ibrary(data.table)
 
+# Import myocardial infection dataset
+
+url  <- "http://d1ie9wlkzugsxr.cloudfront.net/data_propensity/myocardial_propensity.csv"
+data            <- fread(url)
+
+simulations     <- 3000
+horizon         <- nrow(data)
+
+# arms always start at 1
+data$trt        <- data$trt + 1
+
+# turn death into alive, making it a reward
+data$alive      <- abs(data$death - 1)
+
+# calculate propensity weights
+
+m      <- glm(I(trt-1) ~ age + risk + severity, data=data, family=binomial(link="logit"))
+data$p <-predict(m, type = "response")
+
+# run bandit - if you leave out p, Propensity Bandit uses marginal prob per arm for propensities:
+# table(private$z)/length(private$z)
+
+f          <- alive ~ trt | age + risk + severity | p
+
+bandit     <- OfflinePropensityWeightingBandit$new(formula = f, data = data)
+
+# Define agents.
+agents      <- list(Agent$new(LinUCBDisjointOptimizedPolicy$new(0.2), bandit, "LinUCB"))
+
+# Initialize the simulation.
+
+simulation  <- Simulator$new(agents = agents, simulations = simulations, horizon = horizon)
+
+# Run the simulation.
+sim  <- simulation$run()
+
+# plot the results
+plot(sim, type = "cumulative", regret = FALSE, rate = TRUE, legend_position = "bottomright")
 
 }
 }
 \references{
-Agrawal, R. (1995). The continuum-armed bandit problem. SIAM journal on control and optimization, 33(6), 1926-1951.
+Agarwal, Alekh, et al. "Taming the monster: A fast and simple algorithm for contextual bandits."
+International Conference on Machine Learning. 2014.
 }
 \seealso{
 Core contextual classes: \code{\link{Bandit}}, \code{\link{Policy}}, \code{\link{Simulator}},
 \code{\link{Agent}}, \code{\link{History}}, \code{\link{Plot}}
 
-Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},  \code{\link{OfflinePropensityWeightingBandit}}
+Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},
+\code{\link{OfflinePropensityWeightingBandit}}
 
-Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualThompsonSamplingPolicy}}
+Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualLinTSPolicy}}
 }

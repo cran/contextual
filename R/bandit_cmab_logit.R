@@ -37,7 +37,7 @@ ContextualLogitBandit <- R6::R6Class(
       pr         <- 1/(1+exp(-z))                         # inverse logit transform of linear predictor
       rewards    <- rbinom(d,1,pr)                        # binary rewards from the Bernoulli distribution
 
-      optimal_arm    <- which_max_tied(rewards)
+      optimal_arm    <- which_max_tied(pr)
       reward  <- list(
         reward                   = rewards[action$choice],
         optimal_arm              = optimal_arm,
@@ -120,9 +120,10 @@ ContextualLogitBandit <- R6::R6Class(
 #' Core contextual classes: \code{\link{Bandit}}, \code{\link{Policy}}, \code{\link{Simulator}},
 #' \code{\link{Agent}}, \code{\link{History}}, \code{\link{Plot}}
 #'
-#' Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},  \code{\link{OfflineReplayEvaluatorBandit}}
+#' Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},
+#' \code{\link{OfflineReplayEvaluatorBandit}}
 #'
-#' Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualThompsonSamplingPolicy}}
+#' Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualLinTSPolicy}}
 #'
 #' @examples
 #' \dontrun{
@@ -132,8 +133,7 @@ ContextualLogitBandit <- R6::R6Class(
 #'
 #' bandit        <- ContextualLogitBandit$new(k = 5, d = 5, intercept = TRUE)
 #'
-#' agents        <- list(Agent$new(ContextualThompsonSamplingPolicy$new(delta=0.5,
-#'                                                        R=0.01, epsilon=0.5), bandit),
+#' agents        <- list(Agent$new(ContextualLinTSPolicy$new(0.1), bandit),
 #'                       Agent$new(EpsilonGreedyPolicy$new(0.1), bandit),
 #'                       Agent$new(LinUCBGeneralPolicy$new(0.6), bandit),
 #'                       Agent$new(ContextualEpochGreedyPolicy$new(8), bandit),

@@ -4,33 +4,18 @@
 \alias{UCB1Policy}
 \title{Policy: UCB1}
 \description{
-\code{UCB1Policy} chooses an arm at
-random (explores) with probability \code{epsilon}, otherwise it
-greedily chooses (exploits) the arm with the highest estimated
-reward.
+UCB policy for bounded bandits with a Chernoff-Hoeffding Bound
+}
+\details{
+\code{UCB1Policy} constructs an optimistic estimate in the form of an Upper Confidence Bound to
+create an estimate of the expected payoff of each action, and picks the action with the highest estimate.
+If the guess is wrong, the optimistic guess quickly decreases, till another action has
+the higher estimate.
 }
 \section{Usage}{
 
 \preformatted{
-policy <- UCB1Policy(epsilon = 0.1)
-}
-}
-
-\section{Arguments}{
-
-
-\describe{
-\item{\code{epsilon}}{
-double, value in the closed interval \code{(0,1]} indicating the probability with which
-arms are selected at random (explored).
-Otherwise, \code{UCB1Policy} chooses the best arm (exploits)
-with a probability of \code{1 - epsilon}
-
-}
-\item{\code{name}}{
-character string specifying this policy. \code{name}
-is, among others, saved to the History log and displayed in summaries and plots.
-}
+policy <- UCB1Policy()
 }
 }
 
@@ -38,7 +23,7 @@ is, among others, saved to the History log and displayed in summaries and plots.
 
 
 \describe{
-\item{\code{new(epsilon = 0.1)}}{ Generates a new \code{UCB1Policy} object. Arguments are defined in the Argument section above.}
+\item{\code{new()}}{ Generates a new \code{UCB1Policy} object.}
 }
 
 \describe{
@@ -65,10 +50,11 @@ based on the reward received, and, potentially, the current context.
 }
 
 \examples{
+\dontrun{
 
 horizon            <- 100L
 simulations        <- 100L
-weights          <- c(0.9, 0.1, 0.1)
+weights            <- c(0.9, 0.1, 0.1)
 
 policy             <- UCB1Policy$new()
 bandit             <- BasicBernoulliBandit$new(weights = weights)
@@ -79,19 +65,19 @@ history            <- Simulator$new(agent, horizon, simulations, do_parallel = F
 plot(history, type = "cumulative")
 
 plot(history, type = "arms")
+
+}
 }
 \references{
-Gittins, J., Glazebrook, K., & Weber, R. (2011). Multi-armed bandit allocation indices. John Wiley & Sons. (Original work published 1989)
-
-Sutton, R. S. (1996). Generalization in reinforcement learning: Successful examples using sparse coarse coding. In Advances in neural information processing systems (pp. 1038-1044).
-
-Strehl, A., & Littman, M. (2004). Exploration via model based interval estimation. In International Conference on Machine Learning, number Icml.
+Lai, T. L., & Robbins, H. (1985). Asymptotically efficient adaptive allocation rules. Advances in applied
+mathematics, 6(1), 4-22.
 }
 \seealso{
 Core contextual classes: \code{\link{Bandit}}, \code{\link{Policy}}, \code{\link{Simulator}},
 \code{\link{Agent}}, \code{\link{History}}, \code{\link{Plot}}
 
-Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},  \code{\link{OfflineReplayEvaluatorBandit}}
+Bandit subclass examples: \code{\link{BasicBernoulliBandit}}, \code{\link{ContextualLogitBandit}},
+\code{\link{OfflineReplayEvaluatorBandit}}
 
-Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualThompsonSamplingPolicy}}
+Policy subclass examples: \code{\link{EpsilonGreedyPolicy}}, \code{\link{ContextualLinTSPolicy}}
 }
