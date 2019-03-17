@@ -14,21 +14,25 @@ Policy <- R6::R6Class(
       is_oracle   <- FALSE     # very seldom TRUE
       invisible(self)
     },
+    set_parameters = function(context_params) {
+      # Parameter initialisation happens here.
+    },
     get_action = function(t, context) {
-      # Selects an arm based on self$theta and context, returns it in action$choice.
+      # Selects an arm based on paramters in self$theta and the current context,
+      # the index of the chosen arm through action$choice.
       stop("Policy$get_action() has not been implemented.", call. = FALSE)
     },
     set_reward = function(t, context, action, reward) {
-      # Updates parameters in theta based on reward awarded by bandit.
+      # Updates parameters in theta based on current context and
+      # the reward that was awarded by the bandit for the policy's action$choice.
       stop("Policy$set_reward() has not been implemented.", call. = FALSE)
     },
-    set_parameters = function(context_params) {
-      # Policy parameter (not theta!) initialisation happens here.
-      stop("Policy$set_parameters() has not been implemented.", call. = FALSE)
-    },
     initialize_theta = function(k) {
-      # Called during contextual's initialisation.
-      # Copies theta_to_arms k times, makes the copies available through theta.
+      # Called by a policy's agent during contextual's initialization phase.
+
+      # The optional "helper variable" self$theta_to_arms
+      # is parsed here. That is, when self$theta_to_arms exists, it is copied
+      # self$k times, and each copy is made available through self$theta.
       if (!is.null(self$theta_to_arms)) {
         for (param_index in seq_along(self$theta_to_arms)) {
           self$theta[[ names(self$theta_to_arms)[param_index] ]] <-
@@ -50,9 +54,9 @@ Policy <- R6::R6Class(
 #' number of contextual features in \code{context$d}.
 #'
 #' To make sure a policy supports both contextual feature vectors and matrices in \code{context$X}, it is
-#' suggested any contextual policy makes use of \pkg{contextual}'s \code{get_arm_context(context$X, arm)}
-#' utility function to obtain the current context for a particular arm, \code{and get_full_context(X, d, k)}
-#' where a policy needs to obtain of the full \code{d x k} matrix.
+#' suggested any contextual policy makes use of \pkg{contextual}'s \code{get_arm_context(context, arm)}
+#' utility function to obtain the current context for a particular arm, and \code{get_full_context(context)}
+#' where a policy makes direct use of a \code{d x k} context matrix.
 #'
 #' It has to compute which of the \code{k}
 #' \code{\link{Bandit}} arms to pull by taking into account this contextual information plus the policy's

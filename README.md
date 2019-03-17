@@ -16,8 +16,8 @@ R package facilitating the simulation and evaluation of context-free and context
 
 The package has been developed to:
 
-* Introduce a wider audience to contextual bandit policies' advanced sequential decision strategies.
 * Ease the implementation, evaluation and dissemination of both existing and new contextual Multi-Armed Bandit policies. 
+* Introduce a wider audience to contextual bandit policies' advanced sequential decision strategies.
 
 Installation
 ------------
@@ -46,12 +46,21 @@ devtools::reload()
 
 clean and rebuild...
 
+Overview of core classes
+------------------------
+
+![](man/figures/cmab_all_medium.jpg)
+
+Contextual consists of six core classes. Of these, the [Bandit](https://github.com/Nth-iteration-labs/contextual/blob/master/R/bandit.R) and [Policy](https://github.com/Nth-iteration-labs/contextual/blob/master/R/policy.R) classes are subclassed and extended when implementing custom (synthetic or offline) bandits and policies. The other four classes ([Agent](https://github.com/Nth-iteration-labs/contextual/blob/master/R/agent.R), [Simulator](https://github.com/Nth-iteration-labs/contextual/blob/master/R/simulator.R), [History](https://github.com/Nth-iteration-labs/contextual/blob/master/R/history.R), and [Plot](https://github.com/Nth-iteration-labs/contextual/blob/master/R/plot.R)) are the workhorses of the package, and generally need not be adapted or subclassed.
+
 Documentation
 -------------
 
 See the [demo directory](https://github.com/Nth-iteration-labs/contextual/tree/master/demo) for practical examples and replications of both synthetic and offline (contextual) bandit policy evaluations. 
 
-How to replicate figures from two books, both offering a first introduction to context-free Multi-Armed Bandits:
+When seeking to extend contextual, it may also be of use to review ["Extending Contextual: Frequently Asked Questions"](https://nth-iteration-labs.github.io/contextual/articles/only_pkgdown/faq.html), before diving into the source code.
+
+How to replicate figures from two introductory context-free Multi-Armed Bandits texts:
 
 * [Replication of figures from Sutton and Barto, "Reinforcement Learning: An Introduction", Chapter 2](https://nth-iteration-labs.github.io/contextual/articles/sutton_barto.html)
 * [Replication of figures from "Bandit algorithms for website optimization" by John Miles White](https://nth-iteration-labs.github.io/contextual/articles/website_optimization.html)
@@ -72,6 +81,10 @@ Examples of both synthetic and offline *contextual* multi-armed bandit evaluatio
 
 * [Offline Bandits and Simpson's Paradox](https://nth-iteration-labs.github.io/contextual/articles/simpsons.html)
 
+An example how to make use of the optional theta log to create interactive context-free bandit animations:
+
+* [Interactive, animated versions of Epsilon Greedy, UCB1 and Thompson Sampling policies](https://pavlov.tech/2019/03/02/animated-multi-armed-bandit-policies/)
+
 Some more extensive vignettes to get you started with the package:
 
 * [Getting started: running simulations](https://nth-iteration-labs.github.io/contextual/articles/introduction.html)
@@ -87,12 +100,6 @@ Paper offering a general overview of the package's structure & API:
 * [Blog at Pavlov](https://pavlov.tech/category/contextual/)
 -->
 
-Overview of core classes
-------------------------
-
-
-![](man/figures/cmab_all_medium.jpg)
-
 Policies and Bandits
 --------------------
 
@@ -100,7 +107,7 @@ Overview of contextual's growing library of contextual and context-free bandit p
 
 | General | Context-free | Contextual | Other |
 |---------------|-------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|------------------------------|
-| Random<br>  Oracle<br> Fixed <br> <br> <br><br><br>  | Epsilon-Greedy<br>  Epsilon-First<br>  UCB1, UCB2<br>   Thompson Sampling<br>   BootstrapTS<br>   Softmax<br> Gradient<br>  Gittins | CMAB Naive Epsilon-Greedy <br> Epoch-Greedy<br>   LinUCB (General, Disjoint, Hybrid)<br>Linear Thompson Sampling<br> ProbitTS<br> LogitBTS<br>GLMUCB<br>  <br>  | Lock-in Feedback (LiF)  <br> <br> <br> <br><br> <br><br> <br>  |
+| Random<br>  Oracle<br> Fixed <br><br><br><br><br><br>  | Epsilon-Greedy<br>  Epsilon-First<br>  UCB1, UCB2<br>   Thompson Sampling<br>   BootstrapTS<br>   Softmax<br> Gradient<br>  Gittins | CMAB Naive Epsilon-Greedy <br> Epoch-Greedy<br>   LinUCB (General, Disjoint, Hybrid)<br>Linear Thompson Sampling<br> ProbitTS<br> LogitBTS<br>GLMUCB<br>  <br>  | Lock-in Feedback (LiF)  <br> <br> <br> <br><br> <br><br> <br>  |
 
 Overview of contextual's bandit library:
 

@@ -11,13 +11,15 @@ OfflinePropensityWeightingBandit <- R6::R6Class(
   public = list(
     class_name = "OfflinePropensityWeightingBandit",
     inverted = NULL,
+    threshold = NULL,
     initialize   = function(formula,
                             data, k = NULL, d = NULL,
                             unique = NULL, shared = NULL,
                             randomize = TRUE, replacement = FALSE,
                             jitter = FALSE, arm_multiply = FALSE,
-                            inverted = FALSE) {
-      self$inverted <- inverted
+                            inverted = FALSE, threshold = 0) {
+      self$inverted  <- inverted
+      self$threshold <- threshold
       super$initialize(formula,
                        data, k, d,
                        unique, shared,
@@ -29,18 +31,19 @@ OfflinePropensityWeightingBandit <- R6::R6Class(
       private$p <-  Formula::model.part(private$formula, data = private$S, lhs = 0, rhs = 3, drop = TRUE)
       if (length(private$p) == 0 || is.null(private$p)) {
         marginal_prob <- table(private$z)/length(private$z)
-        private$p <- marginal_prob[private$z]
+        private$p     <- marginal_prob[private$z]
       }
-      private$n     <- 0
-      private$p_hat <- 0
+      private$n       <- 0
+      private$p_hat   <- 0
     },
     get_reward = function(index, context, action) {
       if (private$z[[index]] == action$choice) {
-        p <- private$p[index]
-        if (self$inverted) {
-          p <- p
+        p   <- private$p[index]
+        if (self$threshold > 0) {
+          if (isTRUE(self$inverted)) p <- 1 / p
+          p <- 1 / max(p,self$threshold)
         } else {
-          p <- (1 / p)
+          if (isFALSE(self$inverted)) p <- 1 / p
         }
         inc(private$n)     <- 1
         inc(private$p_hat) <- (p - private$p_hat) / private$n
@@ -103,7 +106,7 @@ OfflinePropensityWeightingBandit <- R6::R6Class(
 #'   \item{\code{replacement}}{
 #'     logical; sample with replacement (optional, default: TRUE)
 #'   }
-#'   \item{\code{replacement}}{
+#'   \item{\code{jitter}}{
 #'     logical; add jitter to contextual features (optional, default: TRUE)
 #'   }
 #'   \item{\code{arm_multiply}}{
@@ -111,6 +114,11 @@ OfflinePropensityWeightingBandit <- R6::R6Class(
 #'   }
 #'   \item{\code{inverted}}{
 #'     logical; have the propensity scores been weighted (optional, default: FALSE)
+#'   }
+ #'  \item{\code{threshold}}{
+#'     float (0,1); Lower threshold or Tau on propensity score values. Smaller Tau makes for less biased
+#'     estimates with more variance, and vice versa. For more information, see paper by Strehl at all (2010).
+#'     Values between 0.01 and 0.05 are known to work well.
 #'   }
 #'   \item{\code{unique}}{
 #'     integer vector; index of disjoint features (optional)
@@ -162,6 +170,9 @@ OfflinePropensityWeightingBandit <- R6::R6Class(
 #'
 #' Agarwal, Alekh, et al. "Taming the monster: A fast and simple algorithm for contextual bandits."
 #' International Conference on Machine Learning. 2014.
+#'
+#' Strehl, Alex, et al. "Learning from logged implicit exploration data." Advances in Neural Information
+#' Processing Systems. 2010.
 #'
 #' @seealso
 #'

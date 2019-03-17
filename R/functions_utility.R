@@ -78,8 +78,9 @@ which_max_list <- function(x, equal_is_random = TRUE) {
 #'
 #' Returns the index of the maximum value in vector \code{vec}.
 #'
-#' If there is a tie,
-#' the index of one of the tied maxima is returned at random.
+#' If there is a tie, and equal_is_random is TRUE,
+#' the index of one of the tied maxima is returned at random. Otherwise,
+#' the value with the lowest index is returned.
 #'
 #' @param x vector of values
 #' @param equal_is_random boolean
@@ -96,6 +97,10 @@ which_max_tied <- function(x, equal_is_random = TRUE) {
 #' Sum of list
 #'
 #' Returns the sum of the values of the elements of a list \code{x}.
+#'
+#' If there is a tie, and equal_is_random is TRUE,
+#' the index of one of the tied maxima is returned at random. Otherwise,
+#' the value with the lowest index is returned.
 #'
 #' @param x List
 #'
@@ -345,26 +350,49 @@ invlogit <- function(x){
   exp(x)/(1+exp(x))
 }
 
+#' A vector of zeroes and ones
+#'
+#' @param vector_length How long will the vector be?
+#' @param index_of_one Where to insert the one?
+#'
+#' @return Vector of zeroes with one(s) at given index position(s)
+#'
+#' @export
+ones_in_zeroes <- function(vector_length, index_of_one) {
+  x <- rep(0, vector_length)
+  x[index_of_one] <- 1
+  return(x[1:vector_length])
+}
+
+
 #' Return context vector of an arm
 #'
 #' Given d x k matrix or d dimensional vector X,
 #' returns a vector with arm's context.
 #'
-#' @param X d x k Matrix.
+#' @param context a context list containing a d x k Matrix or
+#' d dimensional context vector X, the number of features d and
+#' number of arms k.
 #' @param arm index of arm.
 #' @param select_features indices of to be returned features.
+#' @param prepend_arm_vector prepend a one-hot-encoded arm vector to the returned context vector. That is,
+#' when k = 5 arms, and the to be returned arm vector is arm 3, prepend c(0,0,1,0,0)
 #'
 #' @return Vector that represents context related to an arm
 #'
 #' @export
-get_arm_context <- function(X, arm, select_features = NULL) {
+get_arm_context <- function(context, arm, select_features = NULL, prepend_arm_vector = FALSE) {
   # X <- as.numeric(levels(X))[X]
+  X <- context$X
+  k <- context$k
   if(is.null(select_features)) {
-    if(is.vector(X)) return(X) else return(X[, arm])
+    if(is.vector(X)) Xv <- X else Xv <- X[, arm]
   } else {
-    if(is.vector(X)) return(X[select_features])
-    else return(X[select_features, arm])
+    if(is.vector(X)) Xv <- X[select_features]
+    else Xv <- X[select_features, arm]
   }
+  if(isTRUE(prepend_arm_vector)) Xv <- c(ones_in_zeroes(k,arm),Xv)
+  return(Xv)
 }
 
 #' Get full context matrix over all arms
@@ -373,21 +401,28 @@ get_arm_context <- function(X, arm, select_features = NULL) {
 #' number of arms k and number of features d
 #' returns a matrix with d x k context matrix
 #'
-#' @param X d x k Matrix or d dimensional context vector.
-#' @param d number of features.
-#' @param k number of arms.
+#' @param context a context list containing a d x k Matrix or
+#' d dimensional context vector X, the number of features d and
+#' number of arms k.
 #' @param select_features indices of to be returned feature rows.b
+#' @param prepend_arm_matrix prepend a diagonal arm matrix to the returned context vector. That is,
+#' when k = 5 arms, prepend diag(5) to the top of the matrix.
 #'
 #' @return A d x k context Matrix
 #'
 #' @export
-get_full_context <- function(X, d, k, select_features = NULL) {
+get_full_context <- function(context, select_features = NULL, prepend_arm_matrix = FALSE) {
+  X <- context$X
+  d <- context$d
+  k <- context$k
   if(is.null(select_features)) {
-    if(is.vector(X)) return(matrix(X,d,k)) else return(X)
+    if(is.vector(X)) Xm <- matrix(X,d,k) else Xm <- X
   } else {
-    if(is.vector(X)) return(X[select_features])
-    else return(X[select_features,])
+    if(is.vector(X)) Xm <- X[select_features]
+    else Xm <- X[select_features,]
   }
+  if(isTRUE(prepend_arm_matrix)) Xv <- rbind(diag(k),Xv)
+  return(Xm)
 }
 
 #' @title
@@ -631,4 +666,23 @@ prob_winner <- function(post){
 #' @return a binary (0/1) coded variable indicating whether the condition is true
 #'
 #' @export
-ind <- function(cond) ifelse(cond, 1L, 0L)
+ind <- function(cond) {
+  ifelse(cond, 1L, 0L)
+}
+
+
+#' Convert all factor columns in data.table to numeric
+#'
+#' @param dt a data.table
+#' @return the data.table with column factors converted to numeric
+#'
+#' @export
+data_table_factors_to_numeric <- function(dt){
+  setDT(dt)
+  factor_cols <- names(which(sapply(dt, class)=="factor"))
+  if(length(factor_cols) > 0) {
+    suppressWarnings(dt[,(factor_cols) :=
+                          lapply(.SD, function(x) as.numeric(as.character(x))),.SDcols=factor_cols])
+  }
+  return(dt)
+}

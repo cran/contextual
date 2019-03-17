@@ -346,6 +346,7 @@ Simulator <- R6::R6Class(
 #' simulator <- Simulator$new(agents,
 #'                            horizon = 100L,
 #'                            simulations = 100L,
+#'                            save_interval = 1,
 #'                            save_context = FALSE,
 #'                            save_theta = FALSE,
 #'                            do_parallel = TRUE,
@@ -370,7 +371,7 @@ Simulator <- R6::R6Class(
 #'     with a new seed on each repeat (itself deterministically derived from set\_seed).
 #'   }
 #'   \item{\code{save_interval}}{
-#'     \code{integer}. Save only every \code{save_interval} time steps.
+#'     \code{integer}. Write data to historyonly every \code{save_interval} time steps. Default is 1.
 #'   }
 #'   \item{\code{save_context}}{
 #'     \code{logical}. Save the context matrices \code{X} to the History log during a simulation?
@@ -402,7 +403,7 @@ Simulator <- R6::R6Class(
 #'       and potential errors when running a \code{Simulator} in parallel mode.
 #'   }
 #'   \item{\code{log_interval}}{
-#'       \code{integer}. Sets the log write interval.
+#'       \code{integer}. Sets the log write interval. Default every 1000 time steps.
 #'   }
 #'   \item{\code{include_packages}}{
 #'       \code{List}. List of packages that (one of) the policies depend on. If a \code{Policy} requires an
@@ -449,7 +450,6 @@ Simulator <- R6::R6Class(
 #'
 #'   policy    <- EpsilonGreedyPolicy$new(epsilon = 0.1)
 #'   bandit    <- BasicBernoulliBandit$new(weights = c(0.6, 0.1, 0.1))
-#'
 #'   agent     <- Agent$new(policy, bandit, name = "E.G.", sparse = 0.5)
 #'
 #'   history   <- Simulator$new(agents = agent,

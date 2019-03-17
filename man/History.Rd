@@ -117,16 +117,24 @@ Retrieve list of percentage arms chosen per agent for \code{limit_agents}.
 \item{\code{get_meta_data()}}{
 Retrieve History meta data.
 }
-\item{\code{set_meta_data = function(key, value, group = "sim", agent_name = NULL)}}{
+\item{\code{set_meta_datan(key, value, group = "sim", agent_name = NULL)}}{
 Set History meta data.
 }
-\item{\code{get_cumulative_data = function(limit_agents = NULL, limit_cols = NULL, interval = 1,
+\item{\code{get_cumulative_data(limit_agents = NULL, limit_cols = NULL, interval = 1,
   cum_average = FALSE))}}{
 Retrieve cumulative statistics data.
 }
-\item{\code{get_cumulative_result = function(limit_agents = NULL, limit_cols = NULL, interval = 1,
+\item{\code{get_cumulative_result(limit_agents = NULL, limit_cols = NULL, interval = 1,
   cum_average = FALSE))}}{
 Retrieve cumulative statistics data point.
+}
+\item{\code{save_theta_json(filename = "theta.json"))}}{
+Save theta in JSON format to a file. Warning: the theta log, and therefor the file, can get very
+large very fast.
+}
+\item{\code{get_theta(limit_agent, to_numeric_matrix = FALSE)}}{
+Retrieve an agent's simplified data.table version of the theta log.
+If to_numeric is TRUE, the data.table will be converted to a numeric matrix.
 }
 \item{\code{data}}{
 Active binding, read access to History's internal data.table.
