@@ -31,6 +31,14 @@ plot.History <- function(x, ...) {
     legend <- eval(args$legend)
   else
     legend <- TRUE
+  if ("trunc_per_agent" %in% names(args))
+    trunc_per_agent <- eval(args$trunc_per_agent)
+  else
+    trunc_per_agent <- TRUE
+  if ("trunc_over_agents" %in% names(args))
+    trunc_over_agents <- eval(args$trunc_over_agents)
+  else
+    trunc_over_agents <- TRUE
   if ("regret" %in% names(args))
     regret <- eval(args$regret)
   else
@@ -118,6 +126,14 @@ plot.History <- function(x, ...) {
     legend_title <- eval(args$legend_title)
   else
     legend_title <- NULL
+  if ("xlab" %in% names(args))
+    xlab <- eval(args$xlab)
+  else
+    xlab <- NULL
+  if ("ylab" %in% names(args))
+    ylab <- eval(args$ylab)
+  else
+    ylab <- NULL
   if ("rate" %in% names(args))
     rate <- eval(args$rate)
   else
@@ -152,8 +168,12 @@ plot.History <- function(x, ...) {
       legend_position = legend_position,
       legend_title = legend_title,
       no_par = no_par,
+      xlab = xlab,
+      ylab = ylab,
       limit_agents = limit_agents,
-      limit_context = limit_context
+      limit_context = limit_context,
+      trunc_over_agents = trunc_over_agents,
+      trunc_per_agent = trunc_per_agent
     )
   } else if (type == "average") {
     Plot$new()$average(
@@ -179,9 +199,13 @@ plot.History <- function(x, ...) {
       legend_position = legend_position,
       legend_title = legend_title,
       no_par = no_par,
+      xlab = xlab,
+      ylab = ylab,
       cum_average = cum_average,
       limit_agents = limit_agents,
-      limit_context = limit_context
+      limit_context = limit_context,
+      trunc_over_agents = trunc_over_agents,
+      trunc_per_agent = trunc_per_agent
     )
   } else if (type == "optimal") {
     Plot$new()$optimal(
@@ -205,8 +229,12 @@ plot.History <- function(x, ...) {
       legend_position = legend_position,
       legend_title = legend_title,
       no_par = no_par,
+      xlab = xlab,
+      ylab = ylab,
       limit_agents = limit_agents,
-      limit_context = limit_context
+      limit_context = limit_context,
+      trunc_over_agents = trunc_over_agents,
+      trunc_per_agent = trunc_per_agent
     )
   } else if (type == "arms") {
     Plot$new()$arms(
@@ -223,9 +251,10 @@ plot.History <- function(x, ...) {
       legend_position = legend_position,
       legend_title = legend_title,
       no_par = no_par,
+      xlab = xlab,
+      ylab = ylab,
       limit_agents = limit_agents,
       limit_context = limit_context
-
     )
   }
 }

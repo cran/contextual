@@ -10,11 +10,11 @@
 \alias{check_history_data}
 \title{Plot}
 \description{
-Generates plots from \code{History} data.
+Generates plots from \code{\link{History}} data.
 }
 \details{
 Usually not instantiated directly but invoked by calling the generic \code{plot(h)}, where \code{h}
-is an \code{History} class instance.
+is an \code{\link{History}} class instance.
 }
 \section{Usage}{
 
@@ -60,8 +60,7 @@ Methods are descrived in the Methods section above.
 \code{(list , NULL)} Limit plotted agents to the agents in the list.
 }
 \item{\code{limit_context}}{
-\code{(integer vector , NULL)} Only plots data of context(s) where vector equals 1 in
-as.vector(context), excludes where 0 or unspecified.
+\code{(character vector , NULL)} Only plots data where context feature name(s) in vector equal to one.
 }
 \item{\code{no_par}}{
 \code{(logical, FALSE)} If no_par is TRUE, Plot() does not set or adjust plotting parameters itself.
@@ -132,6 +131,20 @@ size \code{interval}.
 }
 \item{\code{lwd}}{
 \code{(integer, 1)} Line width.
+}
+\item{\code{xlab}}{
+\code{(character, NULL)} a title for the x axis
+}
+\item{\code{ylab}}{
+\code{(character, NULL)} a title for the y axis
+}
+\item{\code{trunc_over_agents}}{
+\code{(logical , TRUE)} Truncate the chart to the agent with the fewest time steps t.
+}
+\item{\code{trunc_per_agent}}{
+\code{(logical , TRUE)} Truncate every agent's plot to the number of time steps that have been fully
+simulated. That is, time steps for which the number of simulations equals the number defined in
+\code{\link{Simulator}}'s \code{simulations} parameter.
 }
 }
 }
