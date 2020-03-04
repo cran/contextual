@@ -19,10 +19,15 @@ ThompsonBayesianLinearPolicy <- R6::R6Class(
       self$theta <- list('J' = self$J, 'P' = self$P, 'err' = self$err)
     },
     get_action = function(t, context) {
-      sigma <- solve(self$theta$P)
+      sigma <- solve(self$theta$P, tol = 1e-200)
       mu <- sigma %*% matrix(self$theta$J)
-      betas <- mvrnorm(n = 1, mu, sigma)
+      betas <- contextual::mvrnorm(n = 1, mu, sigma)
       action$choice <- -(betas[2] / (2*betas[3]))
+      if(action$choice > 1){
+        action$choice <- 1
+      } else if(action$choice < 0) {
+        action$choice <- 0
+      }
       action
     },
     set_reward = function(t, context, action, reward) {

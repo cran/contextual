@@ -27,7 +27,9 @@ Simulator <- R6::R6Class(
     save_interval = NULL,
     include_packages = NULL,
     outfile = NULL,
+    global_seed = NULL,
     chunk_multiplier = NULL,
+    policy_time_loop = NULL,
     cl = NULL,
     initialize = function(agents,
                           horizon = 100L,
@@ -42,7 +44,11 @@ Simulator <- R6::R6Class(
                           log_interval = 1000,
                           include_packages = NULL,
                           t_over_sims = FALSE,
-                          chunk_multiplier = 1) {
+                          chunk_multiplier = 1,
+                          policy_time_loop = FALSE) {
+
+      # save current seed
+      self$global_seed <- contextual::get_global_seed()
 
       if (!is.list(agents)) agents <- list(agents)
 
@@ -61,6 +67,7 @@ Simulator <- R6::R6Class(
       self$save_interval <- as.integer(save_interval)
       self$include_packages <- include_packages
       self$chunk_multiplier <- as.integer(chunk_multiplier)
+      self$policy_time_loop <- policy_time_loop
 
       self$reset()
     },
@@ -139,6 +146,7 @@ Simulator <- R6::R6Class(
       set_seed                 <- self$set_seed
       agents                   <- self$agents
       include_packages         <- self$include_packages
+      policy_time_loop          <- self$policy_time_loop
 
       # calculate chunk size
       if (length(sims_and_agents_list) <= self$workers) {
@@ -206,16 +214,31 @@ Simulator <- R6::R6Class(
           local_curent_seed <- simulation_index + set_seed * 42
           set.seed(local_curent_seed)
           sim_agent$bandit$post_initialization()
-          if(isTRUE(sim_agent$bandit$arm_multiply))
-            horizon_loop <- horizon * sim_agent$bandit$k
-          else
+          sim_agent$policy$post_initialization()
+          if(isTRUE(sim_agent$bandit$arm_multiply)) {
+            if(policy_time_loop)
+              horizon_loop <- horizon
+            else
+              horizon_loop <- horizon * sim_agent$bandit$k
+            data_length <- horizon * sim_agent$bandit$k
+          } else {
             horizon_loop <- horizon
+            data_length <- horizon
+          }
           set.seed(local_curent_seed + 1e+06)
-          sim_agent$bandit$generate_bandit_data(n = horizon_loop)
+          sim_agent$bandit$generate_bandit_data(n = data_length)
+
           if (isTRUE(t_over_sims)) sim_agent$set_t(as.integer((simulation_index - 1L) * horizon_loop))
           step <- list()
-          for (t in 1L:horizon_loop) {
+
+          loop_time <- 0L
+          while (loop_time < horizon_loop) {
             step <- sim_agent$do_step()
+            if(isTRUE(policy_time_loop)) {
+              loop_time <- step[[5]]
+            } else {
+              loop_time <- loop_time + 1L
+            }
             if (!is.null(step[[3]]) && ((step[[5]] == 1) || (step[[5]] %% save_interval == 0))) {
               local_history$insert(
                 index,                                         #index
@@ -255,6 +278,9 @@ Simulator <- R6::R6Class(
       message("Computing statistics.")
       # update statistics TODO: not always necessary, add option arg to class?
       self$internal_history$update_statistics()
+
+      # load global seed
+      .Random.seed <- self$global_seed
 
       # set meta data and messages
       self$stop_parallel_backend()
@@ -298,6 +324,8 @@ Simulator <- R6::R6Class(
       # nocov end
     },
     finalize = function() {
+      # set global seed back to value before
+      contextual::set_global_seed(self$global_seed)
       #closeAllConnections()
     }
   ),
@@ -343,15 +371,18 @@ Simulator <- R6::R6Class(
 #' simulator <- Simulator$new(agents,
 #'                            horizon = 100L,
 #'                            simulations = 100L,
-#'                            save_interval = 1,
 #'                            save_context = FALSE,
 #'                            save_theta = FALSE,
 #'                            do_parallel = TRUE,
 #'                            worker_max = NULL,
-#'                            t_over_sims = FALSE,
 #'                            set_seed = 0,
+#'                            save_interval = 1,
 #'                            progress_file = FALSE,
-#'                            include_packages = NULL)
+#'                            log_interval = 1000,
+#'                            include_packages = NULL,
+#'                            t_over_sims = FALSE,
+#'                            chunk_multiplier = 1,
+#'                            policy_time_loop = FALSE)
 #' }
 #'
 #' @section Arguments:
@@ -414,6 +445,14 @@ Simulator <- R6::R6Class(
 #'      break these workloads into smaller chunks. This can be done by setting the chunk_multiplier to some
 #'      integer value, where the number of chunks will total chunk_multiplier x number_of_workers.
 #'   }
+#'   \item{\code{policy_time_loop}}{
+#'      \code{logical} In the case of replay style bandits, a Simulator's horizon equals the number of
+#'      accepted plus the number of rejected data points or samples. If \code{policy_time_loop} is \code{TRUE},
+#'      the horizon equals the number of accepted data points or samples. That is, when \code{policy_time_loop}
+#'      is \code{TRUE}, a Simulator will keep running until the number of data points saved to History is
+#'      equal to the Simulator's horizon.
+#'   }
+#'
 #' }
 #'
 #' @section Methods:

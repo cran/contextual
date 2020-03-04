@@ -13,7 +13,7 @@
 Parent or superclass of all \code{\{contextual\}} \code{Policy} subclasses.
 }
 \details{
-On every \emph{t} = {1, \ldots, T}, a policy receives \code{d} dimensional feature vector or
+On every \emph{t} = \{1, \ldots, T\}, a policy receives \code{d} dimensional feature vector or
 \code{d x k} dimensional matrix
 \code{context$X}*, the current number of \code{\link{Bandit}} arms in \code{context$k}, and the current
 number of contextual features in \code{context$d}.
@@ -77,6 +77,11 @@ arguments:
 \code{reward$optimal} (as set by \code{bandit}).
 }
 utilizes the above arguments to update and return the set of parameters in list \code{theta}.
+}
+
+\item{\code{post_initialization()}}{
+Post-initialization happens after cloning the Policy instance \code{number_of_simulations} times.
+Do sim level random generation here.
 }
 
 \item{\code{set_parameters()}}{

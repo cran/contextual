@@ -10,8 +10,8 @@ The entry point of any \pkg{contextual} simulation.
 }
 \details{
 A Simulator takes, at a minimum, one or more \code{\link{Agent}} instances, a horizon
-(the length of an individual simulation, \emph{t} = {1, \ldots, T}) and the number of simulations
-(How many times to repeat each simulation over \emph{t} = {1, \ldots, T}, with a new seed
+(the length of an individual simulation, \emph{t} = \{1, \ldots, T\}) and the number of simulations
+(How many times to repeat each simulation over \emph{t} = \{1, \ldots, T\}, with a new seed
 on each repeat*).
 
 It then runs all simulations (in parallel by default), keeping a log of all \code{\link{Policy}} and
@@ -29,15 +29,18 @@ each agent over all \code{horizon x simulations} time steps.
 simulator <- Simulator$new(agents,
                            horizon = 100L,
                            simulations = 100L,
-                           save_interval = 1,
                            save_context = FALSE,
                            save_theta = FALSE,
                            do_parallel = TRUE,
                            worker_max = NULL,
-                           t_over_sims = FALSE,
                            set_seed = 0,
+                           save_interval = 1,
                            progress_file = FALSE,
-                           include_packages = NULL)
+                           log_interval = 1000,
+                           include_packages = NULL,
+                           t_over_sims = FALSE,
+                           chunk_multiplier = 1,
+                           policy_time_loop = FALSE)
 }
 }
 
@@ -49,10 +52,10 @@ simulator <- Simulator$new(agents,
 An \code{Agent} instance or a \code{list} of \code{Agent} instances.
 }
 \item{\code{horizon}}{
-\code{integer}. The number of pulls or time steps to run each agent, where \emph{t} = {1, \ldots, T}.
+\code{integer}. The number of pulls or time steps to run each agent, where \emph{t} = \{1, \ldots, T\}.
 }
 \item{\code{simulations}}{
-\code{integer}. How many times to repeat each agent's simulation over \emph{t} = {1, \ldots, T},
+\code{integer}. How many times to repeat each agent's simulation over \emph{t} = \{1, \ldots, T\},
 with a new seed on each repeat (itself deterministically derived from set\_seed).
 }
 \item{\code{save_interval}}{
@@ -102,6 +105,14 @@ Depending on workload, network bandwith, memory size and other variables it can 
 break these workloads into smaller chunks. This can be done by setting the chunk_multiplier to some
 integer value, where the number of chunks will total chunk_multiplier x number_of_workers.
 }
+\item{\code{policy_time_loop}}{
+\code{logical} In the case of replay style bandits, a Simulator's horizon equals the number of
+accepted plus the number of rejected data points or samples. If \code{policy_time_loop} is \code{TRUE},
+the horizon equals the number of accepted data points or samples. That is, when \code{policy_time_loop}
+is \code{TRUE}, a Simulator will keep running until the number of data points saved to History is
+equal to the Simulator's horizon.
+}
+
 }
 }
 

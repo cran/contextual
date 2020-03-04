@@ -17,7 +17,7 @@ synthetic or offline) contexts and rewards.
 On initialisation, a \code{Bandit} subclass has to define the number of arms \code{self$k}
 and the number of contextual feature dimensions \code{self$d}.
 
-For each \emph{t} = {1, \ldots, T} a \code{Bandit} then generates a \code{list} containing
+For each \emph{t} = \{1, \ldots, T\} a \code{Bandit} then generates a \code{list} containing
 current context in \code{d x k} dimensional matrix \code{context$X},
 the number of arms in \code{context$k} and the number of features in \code{context$d}.
 
@@ -69,13 +69,15 @@ returns a named \code{list} containing \code{reward$reward} and, where computabl
 }
 
 \item{\code{post_initialization()}}{
-Called after class and seed initialisation, but before the start of the simulation.
-Set random values that remain available throughout the life of a \code{Bandit} here.
+Is called after a Simulator has cloned the Bandit instance \code{number_of_simulations} times.
+Do sim level random generation here.
 }
 
-\item{\code{generate_bandit_data()}}{
-Called after class and seed initialisation, but before the start of a simulation.
-Pregenerate \code{contexts} and \code{rewards} here.
+\item{\code{generate_bandit_data(n)}}{
+Is called after cloning the Bandit instance \code{number_of_simulations} times.
+Differentiates itself from \code{post_initialization()} in that it is called after the optional
+arm-multiplier option is applied in Simulator, and in that it is possible to set the length of
+the to be generated data with the function's \code{n} parameter.
 }
 }
 }

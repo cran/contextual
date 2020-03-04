@@ -87,9 +87,10 @@ which_max_list <- function(x, equal_is_random = TRUE) {
 #'
 #' @export
 which_max_tied <- function(x, equal_is_random = TRUE) {
+  x <- unlist(x, FALSE, FALSE)
   x <- seq_along(x)[x == max(x)]
   if (length(x) > 1L && equal_is_random)  {
-      return(sample(x, 1L, replace = TRUE))
+    return(sample(x, 1L, replace = TRUE))
   } else {
     return(x[1])
   }
@@ -685,4 +686,31 @@ data_table_factors_to_numeric <- function(dt){
                           lapply(.SD, function(x) as.numeric(as.character(x))),.SDcols=factor_cols])
   }
   return(dt)
+}
+
+
+
+#' Lookup .Random.seed in global environment
+#'
+#' @return an integer vector, containing the random number generator (RNG) state for random number generation
+#'
+#' @export
+get_global_seed = function() {
+  current.seed = NA
+  if (exists(".Random.seed", envir=.GlobalEnv)) {
+    current.seed = .Random.seed
+  }
+  current.seed
+}
+
+
+#' Set .Random.seed to a pre-saved value
+#'
+#' @param x integer vector
+#'
+#' @export
+set_global_seed = function(x) {
+  if (length(x)>1) {
+    assign(".Random.seed", x, envir=.GlobalEnv)
+  }
 }
