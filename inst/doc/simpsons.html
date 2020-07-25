@@ -12,10 +12,26 @@
 
 <meta name="author" content="Robin van Emden" />
 
-<meta name="date" content="2020-03-04" />
+<meta name="date" content="2020-07-25" />
 
 <title>Demo: Bandits, Propensity Weighting &amp; Simpson’s Paradox in R</title>
 
+<script>// Hide empty <a> tag within highlighted CodeBlock for screen reader accessibility (see https://github.com/jgm/pandoc/issues/6352#issuecomment-626106786) -->
+// v0.0.1
+// Written by JooYoung Seo (jooyoung@psu.edu) and Atsushi Yasumoto on June 1st, 2020.
+
+document.addEventListener('DOMContentLoaded', function() {
+  const codeList = document.getElementsByClassName("sourceCode");
+  for (var i = 0; i < codeList.length; i++) {
+    var linkList = codeList[i].getElementsByTagName('a');
+    for (var j = 0; j < linkList.length; j++) {
+      if (linkList[j].innerHTML === "") {
+        linkList[j].setAttribute('aria-hidden', 'true');
+      }
+    }
+  }
+});
+</script>
 
 
 <style type="text/css">code{white-space: pre;}</style>
@@ -303,7 +319,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">Demo: Bandits, Propensity Weighting &amp; Simpson’s Paradox in R</h1>
 <h4 class="author">Robin van Emden</h4>
-<h4 class="date">2020-03-04</h4>
+<h4 class="date">2020-07-25</h4>
 
 
 
@@ -457,7 +473,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb8-23"><a href="#cb8-23"></a></span>
 <span id="cb8-24"><a href="#cb8-24"></a><span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">&quot;Movie:&quot;</span>,<span class="kw">sum</span>(b_dt[choice<span class="op">==</span><span class="dv">2</span>]<span class="op">$</span>reward)<span class="op">/</span><span class="kw">nrow</span>(b_dt[choice<span class="op">==</span><span class="dv">2</span>]))) </span>
 <span id="cb8-25"><a href="#cb8-25"></a>[<span class="dv">1</span>] <span class="st">&quot;Movie: 0.600675138999206&quot;</span>  <span class="co"># 0.6 CTR Movie - Simpson&#39;s..</span></span></code></pre></div>
-<p>Clearly, the BiasedPolicy gives rise to, well, biased results! If you’d only be able to look at the data, without knowing of the biased business logic, you’d falsely conclude Sports is more popular then Movies, overall.</p>
+<p>Clearly, the BiasedPolicy gives rise to, well, biased results! If you’d only be able to look at the data, without knowing of the biased business logic, you’d falsely conclude Movies is more popular then Sports, overall.</p>
 </div>
 <div id="using-the-biased-policys-offline-logged-data-to-evaluate-another-policy" class="section level2">
 <h2>Using the biased policy’s offline logged data to evaluate another policy</h2>
